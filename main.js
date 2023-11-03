@@ -28,5 +28,20 @@ const getElem = s => document.querySelector(s);
         });
     }
 
+    const rgbTeste = getElem('#rgbTeste');
+    if(rgbTeste){
+        rgbTeste.addEventListener('click', function(){
+            const r = getElem('#r').value;
+            const g = getElem('#g').value;
+            const b = getElem('#b').value;
+
+            if(r+g+b == RGB_INPUT){
+                getElem(".modal-content").classList.add("acertou");
+                getElem('#respRGB').append(RGB_MSG);
+                getElem('#imgInst').classList.remove('hide');
+            }
+        })
+    }
+
 
 })();

@@ -11,7 +11,7 @@
     </head>
     <body>
 
-        <div id="lock" >
+        <div id="lock">
             <div class="text-center vh-100 d-flex ">
                 <div class="m-auto">
                     <label class="text-white text-border" for="senha-pag">Qual a senha?</label>
@@ -23,7 +23,7 @@
 
         <!-- TOPO -->
         <div class="mt-5 mb-5 text-center">
-            <h1 class="text-border mb-3 text-white">PARABENXXXX BRENDAAAAAAO</h1>
+            <h1 class="text-border mb-3 text-white"><i class="fa fa-birthday-cake" aria-hidden="true"></i> PARABENXXXX BRENDAAAAAAO !!! <button type="button" class="no-style text-border" data-bs-toggle="modal" data-bs-target="#exampleModal"><i class="fa fa-birthday-cake" aria-hidden="true"></i></button></h1>
             <img class="rounded mx-auto d-block" src="./assets/main.jpeg" width="450">
         </div>
 
@@ -41,38 +41,88 @@
         </seciton>
 
         <!-- ETAPAS -->
-        <section id="etapas" class="main-bg pt-5">
+        <section id="etapas">
             <div class="row align-content-center text-center">
             
-                <div class="etapa col">
-                    
-                    <div class="icone mb-4">
-                        <i class="fa fa-file text-warning text-border-black" aria-hidden="true"></i>
+                <div class="etapa col bg-1 p-5">
+                    <div class="z-2 position-relative">
+                        <div class="icone mb-4">
+                            <i class="fa fa-file text-warning text-border-black" aria-hidden="true"></i>
+                        </div>
+    
+                        <h2> Hmmmm </h2>
+    
+                        <button id="dica1"> Quer uma dica? </buttom>
                     </div>
-
-                    <h2> Hmmmm </h2>
-
-                    <button id="dica1"> Quer uma dica? </buttom>
                 </div>
 
-                <div class="etapa col">
-                    <div class="icone mb-4">
-                        <i class="fa fa-eye text-white text-border-black" aria-hidden="true"></i>
+                <div class="etapa col p-5 bg-2">
+                    <div class="z-2 position-relative">
+                        <div class="icone mb-4">
+                            <i class="fa fa-eye text-white text-border-black" aria-hidden="true"></i>
+                        </div>
+                        <h4 class="text-border-black text-white"> Nem tudo é tão claro... </h4>
                     </div>
-                    <h4 class="text-border-black text-white"> Nem tudo é tão claro... </h4>
                 </div>
 
-                <div class="etapa col">
-                    <div class="img"></div>
+                <div class="etapa col p-5 bg-3">
+                    <div class="z-2 position-relative">
+                        <div class="img"></div>
 
-                    <h2> Onde? </h2>
+                        <h2 class="mt-5 pt-3 text-info text-border-black"> Onde ? </h2>
+                        <p class="text-small"> Kelia um docinho</p>
 
-                    <div> Concluido</div>
+                        
+                    </div>
+                </div>
+            </div>
+
+            
+            
+            
+
+            <!-- Modal -->
+            <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLabel">Hmmmm</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="text-center">
+                                <a href="./assets/rgb/hmmmmm.zip" download="hmmmmm.zip">hmmmmm.zip</a>
+                                <p class="pt-3">
+                                    Talvez vc precise de uma palavra <span class="text-pink">colorida</span>
+                                </p>
+                            </div>
+
+                            <div class="row inputs-rgb text-center">
+
+                                <div class="col">
+                                    <label for="r">R</label>
+                                    <input id="r" class="text-danger" type="text" maxlength="1" size="1"/>
+                                </div>
+                                <div class="col">
+                                    <label for="g">G</label>
+                                    <input id="g" class="text-success" type="tex" maxlength="1" size="1"/>
+                                </div>
+                                <div class="col">
+                                    <label for="b">B</label>
+                                    <input id="b" class="text-info" type="text" maxlength="1" size="1"/>
+                                </div>
+                            </div>
+
+                            <p id="respRGB" class="text-center mt-5"></p><img id="imgInst" class="hide" src="./assets/rgb/insta.png" width="20px">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-success" id="rgbTeste">Sera que foi?</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- PAGINAS DE CADA ETAPA -->
-            <div class="mb-5"></div>
             
             <img src="./assets/tem-nada-aqui/nada.jpg" width="1"/>
             <img src="./assets/tem-nada-aqui/serio/nada.jpg" width="1"/>

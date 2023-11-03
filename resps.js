@@ -80,3 +80,5 @@
 */
 const SENHA_LOCK = 'porks';
 const DICA_UM_RESP = 3;
+const RGB_INPUT = '231';
+const RGB_MSG = 'Comentário adicionado a um desenho muito especial com sucesso'
