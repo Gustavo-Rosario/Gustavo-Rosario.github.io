@@ -122,3 +122,134 @@ button:not(.no-style):hover{
 .text-small{
     font-size: 5px;
 }
+
+.p-10{
+    padding: 10rem;
+}
+
+.bg-4{
+    background-color: black;
+    overflow: hidden;
+}
+
+.bg-4::after{
+    content: "4";
+    color: rgb(184, 184, 184);
+    position: absolute;
+    margin: auto;
+    font-size: 600px;
+    top: -30px; 
+    right: 35vw;
+    z-index: 1;
+}
+
+
+
+body {
+    margin: 0;
+    padding: 0;
+    background: peachpuff;
+  }
+  
+  #box {
+    width: 535px;
+    height:  888px;
+    position: relative;
+    margin: auto;
+    border: 2px solid #000;
+    overflow: hidden;
+        box-shadow: 0 1rem 3rem rgba(0,0,0,.175);
+    background: url(https://images.unsplash.com/photo-1585129891066-83969119de8c?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=932&q=80);
+  }
+  
+  .river {
+    filter: url(#turbulence);
+    background: radial-gradient(
+          1.5em 6.28571em at 1.95em,
+          rgba(255, 255, 255, 0) 50%,
+          rgba(255, 255, 255, 0.25) 50%,
+          rgba(255, 255, 255, 0.25) 55%,
+          rgba(255, 255, 255, 0) 55%
+        )
+        0 0,
+      radial-gradient(
+          1.5em 6.28571em at -0.45em,
+          rgba(255, 255, 255, 0) 50%,
+          rgba(255, 255, 255, 0.25) 50%,
+          rgba(255, 255, 255, 0.25) 55%,
+          rgba(255, 255, 255, 0) 55%
+        )
+        1.5em 5.5em,
+      radial-gradient(
+          2.3em 4.57143em at 2.99em,
+          rgba(255, 255, 255, 0) 50%,
+          rgba(255, 255, 255, 0.3) 50%,
+          rgba(255, 255, 255, 0.3) 55%,
+          rgba(255, 255, 255, 0) 55%
+        )
+        0 0,
+      radial-gradient(
+          2.3em 4.57143em at -0.69em,
+          rgba(255, 255, 255, 0) 50%,
+          rgba(255, 255, 255, 0.3) 50%,
+          rgba(255, 255, 255, 0.3) 55%,
+          rgba(255, 255, 255, 0) 55%
+        )
+        2.3em 4em,
+      radial-gradient(
+          3.5em 6.28571em at 4.55em,
+          rgba(255, 255, 255, 0) 50%,
+          rgba(255, 255, 255, 0.25) 50%,
+          rgba(255, 255, 255, 0.25) 55%,
+          rgba(255, 255, 255, 0) 55%
+        )
+        0 0,
+      radial-gradient(
+          3.5em 6.28571em at -1.05em,
+          rgba(255, 255, 255, 0) 50%,
+          rgba(255, 255, 255, 0.25) 50%,
+          rgba(255, 255, 255, 0.25) 55%,
+          rgba(255, 255, 255, 0) 55%
+        )
+        3.5em 5.5em,
+      radial-gradient(#15ffa5, #00ced1);
+    background-size: 1.5em 11em, 1.5em 11em, 2.3em 8em, 2.3em 8em, 3.5em 11em,
+      3.5em 11em, 100% 100%;
+    background-repeat: repeat;
+    position: absolute;
+    opacity: 0.75
+  }
+  
+  .river--2 {
+    position: absolute;
+    width: 110%;
+    left: -100px;
+    bottom: -10px !important;
+    height: 20%;
+    -webkit-animation: flow 5s infinite linear;
+    animation: flow 5s infinite linear;
+    box-shadow: 0 1rem 3rem rgba(0,0,0,.175);
+  }
+  /* @-webkit-keyframes flow {
+    0% {
+      background-position: 0 0;
+    }
+    100% {
+      background-position: 0 750px;
+    }
+  } */
+  @keyframes flow {
+    0% {
+      background-position: 0 0;
+    }
+    100% {
+      background-position: 750px 0;
+    }
+  }
+
+.rafting-gif{
+    position: absolute;
+    top: -1062px;
+    right: 200px;
+    z-index: 9999999999;
+}

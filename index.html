@@ -6,7 +6,6 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="./styles.css" />
-        <script src="confetti.js"></script>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     </head>
     <body>
@@ -75,10 +74,7 @@
                         
                     </div>
                 </div>
-            </div>
-
-            
-            
+            </div>         
             
 
             <!-- Modal -->
@@ -122,15 +118,48 @@
                 </div>
             </div>
 
-            <!-- PAGINAS DE CADA ETAPA -->
-            
-            <img src="./assets/tem-nada-aqui/nada.jpg" width="1"/>
-            <img src="./assets/tem-nada-aqui/serio/nada.jpg" width="1"/>
-            <img src="./assets/tem-nada-aqui/serio/NAO-TEM/nada.jpg" width="1"/>
-            <img src="./assets/tem-nada-aqui/serio/NAO-TEM/ta-bom/numero-dentes.jpg" width="1"/>
-
         </section>
-        <script src="./resps.js"></script>
-        <script src="./main.js"></script>
+
+        <section id="etapa-4" class="position-relative hide">
+            <div id="e4bg" class="p-10  bg-4 w-100 h-100">
+                <div class="z-3 position-relative">
+
+                    <h2 class="text-white text-border-black mb-5">Es kam zur richtigen Zeit!!!</h2>
+                    <p class="fs-2 fw-bolder text-white text-border-black">
+                        明らかに、これを翻訳する方法はすでにわかっているので、パズルの一部ではありません。
+                        <br>
+                        <br>
+                        Mesmo sendo um grande quebra cabeça, minhas peças podem formar outras obras próprias<br>
+                        Gostada outras vezes detestada, mas muitas vezes sou tudo que você tem<br>
+                        Chega de mistério. Quem sou eu Bren?
+                        <br>
+                        <input type="text" id="quemsou" />
+                        
+                    </p>
+                </div>
+
+
+                <div id="acertou-q" class="hide">
+                    <div class="river river--2"></div>
+                    <img class="rafting-gif" src="./assets/tem-nada-aqui/serio/NAO-TEM/ta-bom/rafting.gif" />
+
+                    <svg>
+                        <filter id="turbulence" x="0" y="0">
+                        <feTurbulence baseFrequency="0.02 0.05"></feTurbulence>
+                        <feDisplacementMap scale="45" in="SourceGraphic"></feDisplacementMap>
+                        </filter>
+                    </svg>
+
+                </div>
+            </div>
+        </section>
+        <!-- PAGINAS DE CADA ETAPA -->
+            
+        <img src="./assets/tem-nada-aqui/nada.jpg" width="1" style="position: absolute; top: 0px"/>
+        <img src="./assets/tem-nada-aqui/serio/nada.jpg" width="1" style="position: absolute; top: 0px"/>
+        <img src="./assets/tem-nada-aqui/serio/NAO-TEM/nada.jpg" width="1" style="position: absolute; top: 0px"/>
+        <img src="./assets/tem-nada-aqui/serio/NAO-TEM/ta-bom/numero-dentes.jpg" width="1" style="position: absolute; top: 0px"/>
+
+        <script src="./main.min.js"></script>
     </body>
 </html>
