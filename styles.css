@@ -1,0 +1,51 @@
+*{
+    font-family: 'Press Start 2P', monospace;
+}
+
+body{
+    padding: 0px;
+    margin: 0px;
+    overflow-x: hidden;
+    background: rgb(216, 185, 254);
+    background: linear-gradient(180deg, rgb(217, 187, 252) 0%, rgba(213, 185, 254, 0.942) 36%, rgba(202,186,240,0.938813025210084) 100%);
+}
+
+.text-border{
+    text-shadow: -3px 0 purple, 0 3px purple, 3px 0 purple, 0 -3px purple;
+}
+
+.text-border-black{
+    text-shadow: -3px 0 black, 0 3px black, 3px 0 black, 0 -3px black;
+}
+
+.text-purple{
+    color:rgb(146, 110, 192)
+}
+
+
+#lock{
+    top: 0px;
+    background-image: url(./assets/bg.jpeg);
+    object-fit: cover;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+}
+
+#confetti-canvas{
+    position: absolute;
+    top: 0px;
+}
+
+.etapa .icone{
+    font-size: 100px;
+}
+
+.main-bg{
+    background-color: #49eab9;
+}
+
+button:hover{
+    background-color: darkorchid;
+    color: white;
+}
