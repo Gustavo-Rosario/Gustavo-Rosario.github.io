@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Tilemap com Pulo</title>
+  <style>
+    body {
+            margin: 0;
+            overflow: hidden;
+    }
+    canvas {
+        background: #3eaded;
+        display: block;
+        margin: auto;
+    }
+  </style>
+</head>
+<body>
+<canvas id="game" width="600" height="400"></canvas>
+<audio id="bgm" src="8bit-song.mp3" loop></audio>
+<audio id="indoAcad" src="indo-academia.mp3"></audio>
+<audio id="risada" src="risada.mp3"></audio>
+<audio id="jump" src="jump.mp3"></audio>
+<audio id="galinha" src="galinha.mp3"></audio>
+<audio id="fim" src="fim.mp3"></audio>
+<audio id="msgFinal" src="msgFinal.mp3"></audio>
+
+  
+
+<script type="module">
+
+  const jumpSong = document.getElementById("jump");
+
+  const GAME_TITLE = "Carolina's Adventures";
+  const GAME_SUBTITLE = "Maromba day V0.1";
+
+  const tileset = new Image();
+  tileset.src = 'textures.png';
+  
+  const bgImg = new Image();
+  bgImg.src = 'bg.png';
+
+  const arteFinal = new Image();
+  arteFinal.src = 'arteFinal.png'; // Caminho para a imagem do sprite
+
+  const fontePersonalizada = new FontFace("PixelFont", "url('fonts/PixelifySans-VariableFont_wght.ttf')");
+
+  fontePersonalizada.load().then(function (font) {
+    document.fonts.add(font);
+    console.log("Fonte carregada!");
+  });
+
+
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+
+  const personagemImg = new Image();
+  personagemImg.src = 'carolina-spritesheet.png';
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  const tileSize = 65;
+
+  // 1 = bloco, 0 = vazio
+  import {map} from './mapaGrande.js';
+  
+  const mapWidth = map[0].length; // 38
+  const mapHeight = map.length;
+
+
+  // CAIXA DE DIALOGO
+  const dialogBox = {
+    ativo: false,
+    title: {
+      color: null,
+      text: "",
+    },
+    body: {
+      color: null,
+      text: "",
+    },
+    alpha: 0,      // Para animar a entrada (fade-in)
+    animando: false
+  };
+
+  function mostrarDialogo(titulo, texto, exibirFim = false) {
+    dialogBox.ativo = true;
+    dialogBox.title = typeof titulo == 'object' ? titulo : { color: "#fff", text: titulo };
+    dialogBox.body = typeof texto == 'object' ? texto : { color: "#fff", text: texto };
+    dialogBox.alpha = 0;        // Começa invisível
+    dialogBox.animando = true;  // Começa a animação
+    dialogBox.exibirFim = exibirFim; // Flag para exibir o fim do jogo
+
+    // Adiciona o ouvinte para fechar
+    // window.addEventListener("keydown", fecharDialogo, { once: true });
+  }
+
+  function fecharDialogo() {
+    dialogBox.ativo = false;
+
+    const indoAcad = document.getElementById("indoAcad");
+    indoAcad.volume = 0.9; // Ajusta o volume
+    indoAcad.play();
+  }
+
+
+
+  // =========================== ITEMS ===========================
+  const objetos = [];
+
+  const highJump = {
+    x: 1950,
+    y: 2150,
+    w: 70,
+    h: 70,
+    color: "red",
+    sprite: {
+      src: "items-spritesheet.png", // Caminho para a imagem do sprite
+      cutH: 30,
+      frame: 0, // Quadro atual do sprite
+      frameMax: 5, // Total de quadros do sprite
+      frameTime: 7, // Tempo por quadro (em frames de jogo)
+      frameCounter: 0 // Contador de tempo para animação
+    },
+    onTouch: function(player) {
+      player.jumpForce += player.jumpForce; // Aumenta a força do pulo
+      mostrarDialogo({ color: 'yellow', text: "Pulo VANS"}, "Você não pulou um legday. Então agora PULE mais alto com o Vans! Basta segurar o botão de pulo ( B )");
+      this.x = -1500; // Move o item para fora da tela
+
+      const risada = document.getElementById("risada");
+      risada.volume = 0.5; // Ajusta o volume
+      risada.play();
+    }
+  }
+  objetos.push(highJump);
+
+  const morphingBall = {
+    x: 750,
+    y: 850,
+    w: 70,
+    h: 70,
+    color: "red",
+    sprite: {
+      src: "items-spritesheet.png", // Caminho para a imagem do sprite
+      cutH: 110,
+      frame: 0, // Quadro atual do sprite
+      frameMax: 4, // Total de quadros do sprite
+      frameTime: 8, // Tempo por quadro (em frames de jogo)
+      frameCounter: 0 // Contador de tempo para animação
+    },
+    onTouch: function(player) {
+      player.haveBall = true; // Adquire a habilidade de bola
+      mostrarDialogo({ color: 'yellow', text: "Mini Carolina"}, "Vire a mini carolina com a carolina... de WHEY!!! Pressionando o botão ( ↓ ). Volte ao normal pressionando o botão ( ↑ )");
+      this.x = -1500; // Move o item para fora da tela
+
+      const risada = document.getElementById("risada");
+      risada.volume = 0.5; // Ajusta o volume
+      risada.play();
+    }
+  }
+  objetos.push(morphingBall);
+
+  const startGame = {
+    x: 80,
+    y: 2050,
+    w: 70,
+    h: 70,
+    color: "transparent",
+    onTouch: function(player) {
+      mostrarDialogo({ color: 'yellow', text: "BORA TREINAR"}, "Chegue na academia para vencer!!!                                                                                                                                                                           Controles: (B) - Pular          (Y) - Correr         (Setas) - Direção Pressione o botão ( B ) para começar a treinar!");
+      this.x = -1500; // Move o item para fora da tela
+
+      // Inicia a música de fundo
+      const bgm = document.getElementById("bgm");
+      bgm.volume = 0.1; // Ajusta o volume
+      bgm.play().catch(error => {
+        console.error("Erro ao reproduzir a música de fundo:", error);
+      });
+    }
+  }
+  objetos.push(startGame);
+
+
+  const chicken = {
+    x: 4080,
+    y: 2260,
+    w: 80,
+    h: 80,
+    color: "blue",
+    sprite: {
+      src: "items-spritesheet.png", // Caminho para a imagem do sprite
+      cutH: 30 * 10,
+      adjustWidth: 5.5,
+      frame: 0, // Quadro atual do sprite
+      frameMax: 4, // Total de quadros do sprite
+      frameTime: 15, // Tempo por quadro (em frames de jogo)
+      frameCounter: 0 // Contador de tempo para animação
+    },
+    onTouch: function(player) {
+      mostrarDialogo({ color: 'yellow', text: "Ta quase lá!!"}, "Mostre que tu não é uma franga e vá até o fim dessa bagaça");
+      this.x = -1500; // Move o item para fora da tela
+
+      // Inicia a música de fundo
+      const galinha = document.getElementById("galinha");
+      galinha.volume = 1; // Ajusta o volume
+      galinha.play();
+    }
+  }
+  objetos.push(chicken);
+
+
+  const smartImg = new Image();
+  smartImg.src = 'smart.png'; // Caminho para a imagem do sprite
+
+  const smart = {
+    x: 5895,
+    y: 244,
+    w: 550,
+    h: 340,
+    color: "blue",
+    sprite: {
+      src: smartImg, // Caminho para a imagem do sprite
+      cutH: 0,
+      adjustWidth: 30,
+      frame: 0, // Quadro atual do sprite
+      frameMax: 1, // Total de quadros do sprite
+      frameTime: 0, // Tempo por quadro (em frames de jogo)
+      frameCounter: 0 // Contador de tempo para animação
+    }
+  }
+
+  const endGame = {
+    x: 5980,
+    y: 460,
+    w: 80,
+    h: 80,
+    color: "blue",
+    sprite: {
+      src: "items-spritesheet.png", // Caminho para a imagem do sprite
+      cutH: 30 * 7,
+      adjustWidth: 5.5,
+      frame: 0, // Quadro atual do sprite
+      frameMax: 4, // Total de quadros do sprite
+      frameTime: 15, // Tempo por quadro (em frames de jogo)
+      frameCounter: 0 // Contador de tempo para animação
+    },
+    onTouch: function(player) {
+      mostrarDialogo({ color: 'yellow', text: "PARABENS CARORINAN"}, "Feliz aniversáriooooooooooooooooooooo!!! Que seu dia seja maravilhosooooooooo", true);
+      this.x = -1500; // Move o item para fora da tela
+
+      const bgm = document.getElementById("bgm");
+      bgm.pause();
+
+      // Inicia a música de fundo
+      const fim = document.getElementById("fim");
+      fim.volume = 0.5; // Ajusta o volume
+      fim.play();
+
+      const msgFinal = document.getElementById("msgFinal");
+      msgFinal.volume = 1; // Ajusta o volume
+      msgFinal.play();
+    }
+  }
+  objetos.push(endGame);
+
+  
+
+  const player = {
+    x: 90,
+    y: 1700,
+    w: 16 * 3.8,
+    h: 18 * 5,
+    vx: 0,
+    vy: 0,
+    jumpForce: 7.5, // Força do pulo
+    walkForce: 3, // Força de andar
+    isRunning: false, // Modo correr
+    isWalking: false, // Modo andar
+    direction: "R", // Direção do personagem
+    grounded: false,
+    haveBall: false,
+    isBall: false, // Modo bola
+    inWall: false,
+    frame: 0,             // quadro atual
+    frameMax: 5,          // total de quadros
+    frameTime: 10,        // tempo por quadro (em frames de jogo)
+    frameCounter: 0       // contador de tempo
+  };
+
+  let jumpPressedTime = 0;
+  const maxJumpTime = 15; // frames (~0.25s)
+  let isJumping = false;
+
+  // function getCameraOffset() {
+  //   const offsetX = player.x - canvas.width / 2 + player.w / 2;
+  //   const offsetY = player.y - canvas.height / 2 + player.h / 2;
+  //   return { offsetX, offsetY };
+  // }
+
+  function getCameraOffset() {
+    let offsetX = player.x - canvas.width / 2 + player.w / 2;
+    let offsetY = player.y - canvas.height / 2 + player.h / 2;
+
+    // limitar aos limites do mapa
+    offsetX = Math.max(0, Math.min(offsetX, mapWidth * tileSize - canvas.width));
+    offsetY = Math.max(0, Math.min(offsetY, mapHeight * tileSize - canvas.height));
+
+    return { offsetX, offsetY };
+  }
+
+  
+  const deParaTeclado = {
+    "ArrowUp": "ArrowUp",
+    "ArrowDown": "ArrowDown",
+    "ArrowLeft": "ArrowLeft",
+    "ArrowRight": "ArrowRight",
+    "w": "ArrowUp",
+    "s": "ArrowDown",
+    "a": "ArrowLeft",
+    "d": "ArrowRight",
+    " ": "Jump", // Espaço para pular
+    "Enter": "OK", // Enter para confirmar
+    "Shift": "Run" // Shift para correr
+  };
+  
+  const keys = {};
+  document.addEventListener("keydown", e => {
+    const saida = deParaTeclado[e.key];
+    console.log("KEY: ", e.key, "\nSaida: ", saida);
+    keys[saida] = true
+  });
+  document.addEventListener("keyup", e => keys[deParaTeclado[e.key]] = false);
+
+
+  window.addEventListener("gamepadconnected", e => startGamepadPolling());
+
+  function startGamepadPolling() {
+    function checkGamepad() {
+      const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+  
+      for (let gp of gamepads) {
+        if (!gp) continue;
+  
+        for (let index = 0; index < gp.buttons.length; index++){
+          const button = gp.buttons[index];
+          const action = deParaGamepad(index);
+          if (button.pressed) {
+            // console.log("PRESS: ", index);
+            keys[action] = true
+          }else{
+            keys[action] = false
+          }
+        }
+      }
+    
+      requestAnimationFrame(checkGamepad);
+    }
+    
+    requestAnimationFrame(checkGamepad);
+  }
+
+  function deParaGamepad(button){
+    // Mapeia os botões do gamepad para ações
+    const buttonMap = {
+        12: 'ArrowUp',   // Botão UP
+        13: 'ArrowDown',  // Botão DOWN
+        14: 'ArrowLeft',  // Botão LEFT
+        15: 'ArrowRight', // Botão RIGHT
+        2: 'Run',       // Botão Y   
+        1: 'OK',        // Botão A         
+        0: 'Jump'    // Botão B
+    };
+
+    return buttonMap[button] || null; // Retorna a ação correspondente ou null se não houver mapeamento
+  }
+
+  function isSolid(x, y, redToo = false) {
+    const tileX = Math.floor(x / tileSize);
+    const tileY = Math.floor(y / tileSize);
+    return ![0, 4, 10, 11, 12, 13, 14].includes( map[tileY]?.[tileX]);
+  }
+
+  function update() {
+    if (dialogBox.ativo) {
+
+      if(keys["OK"]) fecharDialogo(); // Fecha o diálogo se pressionar Jump (botao de confirmação)
+
+      return; // pausa o jogo
+    }
+    // Controles
+    if (keys["ArrowLeft"]){
+      player.direction = "L"; // Direção esquerda
+      player.vx = keys["Run"] && !player.isBall ? -(player.walkForce * 2.5) : -player.walkForce;
+      player.isWalking = true;
+
+    }else if (keys["ArrowRight"]){
+      player.direction = "R"; // Direção direita
+      player.vx = keys["Run"] && !player.isBall ? player.walkForce * 2.5 : player.walkForce;
+      player.isWalking = true;
+    
+    }else{
+
+      player.vx = 0;
+      player.isWalking = false;
+
+    }
+
+    player.isRunning = keys["Run"] && !player.isBall;
+
+
+    if(player.haveBall){
+      if(keys["ArrowDown"]) player.isBall = true;
+      if(keys["ArrowUp"]) player.isBall = false;
+    }
+
+
+    // JUMP
+    if (keys["Jump"] && !player.isBall) {
+        // if(player.inWall){
+            // isJumping = true;
+            // jumpPressedTime = 0;
+            // player.vy = -6;
+            // player.vx = -30; // Direção oposta à parede
+            // player.grounded = false;
+        // }else 
+        if (player.grounded) {
+            jumpSong.currentTime = 0.9; // Reinicia o som do pulo
+            jumpSong.volume = 0.1; // Ajusta o volume
+            jumpSong.play();
+            isJumping = true;
+            jumpPressedTime = 0;
+            player.vy = -6;
+            player.grounded = false;
+        } else if (isJumping && jumpPressedTime < maxJumpTime) {
+            player.vy = -(player.jumpForce); // mantém força para subir enquanto segura
+        }
+        jumpPressedTime++;
+    } else {
+        isJumping = false;
+    }
+
+    // Gravidade
+    // player.inWall && player.vy > 0 ? 0.1 :
+    player.vy +=  0.5;
+
+    // Movimento horizontal
+    player.x += player.vx;
+
+    // Verifica colisão horizontal
+
+    // Meio
+    const topY = getPosY();
+    const midY = getPosY() + getPlayerHeight() / 2;
+    const botY = getPosY() + getPlayerHeight()-1;
+    if (player.vx > 0 
+        && (
+            isSolid(player.x + player.w, midY) 
+            || isSolid(player.x + player.w, topY)
+            || isSolid(player.x + player.w, botY)
+        )) {
+      player.x = Math.floor((player.x + player.w) / tileSize) * tileSize - player.w - 0.01;
+      player.inWall = true;
+      console.log("Colidiu com a parede direita");
+    }else{
+        player.inWall = false;
+    }
+    if (player.vx < 0 
+        && (
+            isSolid(player.x, midY) 
+            || isSolid(player.x, topY)
+            || isSolid(player.x, botY)
+        )) {
+      player.x = Math.floor((player.x) / tileSize + 1) * tileSize + 0.01;
+      player.inWall = true;
+      console.log("Colidiu com a parede esquerda");
+    }else{
+      player.inWall = false;
+    }
+
+
+    // Movimento vertical
+
+    player.y += player.vy;
+    // Verifica se o jogador está colidindo com o chão
+    if (
+        isSolid(player.x, getPosY() + getPlayerHeight(), true) // Canto inferior esquerdo
+        || isSolid(player.x + player.w, getPosY() + getPlayerHeight(), true) // Canto inferior direito
+    ) {
+      player.y = Math.floor((getPosY() + getPlayerHeight()) / tileSize) * tileSize - getPlayerHeight();
+      player.vy = 0;
+      player.grounded = true;
+    } else if( // Verifica se o jogadro está colidindo com o teto
+    isSolid(player.x, getPosY()) // Canto superior esquerdo
+        || isSolid(player.x + player.w, getPosY()) // Canto superior direito
+    ){
+        player.y = Math.floor(getPosY() / tileSize + 1) * tileSize + 0.01;
+        player.vy = 0;
+        player.grounded = false;    
+    }else {
+      player.grounded = false;
+    }
+
+    atualizarAnimacao();
+  }
+
+  function atualizarAnimacao() {
+    player.frameCounter++;
+
+    if (player.frameCounter >= player.frameTime) {
+      player.frame = (player.frame + 1) % player.frameMax;
+      player.frameCounter = 0;
+    }
+  }
+
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    
+    const { offsetX, offsetY } = getCameraOffset();
+    
+    ctx.drawImage(bgImg, -offsetX, -offsetY, mapWidth * 65, mapHeight * 65); // Desenha o fundo
+
+    const startCol = Math.floor(offsetX / tileSize);
+    const endCol = Math.ceil((offsetX + canvas.width) / tileSize);
+    const startRow = Math.floor(offsetY / tileSize);
+    const endRow = Math.ceil((offsetY + canvas.height) / tileSize);
+
+    // Desenha mapa que estiver atras
+    for (let y = startRow; y < endRow; y++) {
+      for (let x = startCol; x < endCol; x++) {
+        if (map[y] && map[y][x] === undefined) continue; // Verifica se a linha e coluna existem no mapa
+        const tileIndex = map[y][x];
+        if(tileIndex < 10) continue;
+
+        // ctx.strokeStyle = "gray";
+        // ctx.strokeRect(x * tileSize -offsetX, y * tileSize -offsetY, tileSize, tileSize);
+
+        if (tileIndex === 0) continue; // Pula tiles vazios
+
+        // índice na spritesheet
+        const sx = 32 * (tileIndex - 1) + 0.3;
+        const sy = 0;
+
+        // Nao mexer
+        const dx = x * tileSize - offsetX;
+        const dy = y * tileSize - offsetY;
+
+        ctx.drawImage(
+          tileset,
+          sx, sy, 32-0.6, 32, // src
+          dx, dy, tileSize, tileSize  // dest
+        );
+      }
+    }
+
+
+    // Desenha SMART
+    ctx.drawImage(
+      smart.sprite.src, 
+      0, 0, // qual parte cortar da imagem
+      500, 335, // tamanho do corte
+      smart.x - offsetX, smart.y - offsetY, // posição onde desenhar
+      smart.w, smart.h // tamanho do desenho
+    );
+    
+
+    // Desenha itens
+    objetos.forEach(obj => {  
+
+      if(obj.sprite){
+
+        const spriteImg = new Image();
+        spriteImg.src = obj.sprite.src; // Caminho para a imagem do sprite
+
+        obj.sprite.frameCounter++;
+        if (obj.sprite.frameCounter >= obj.sprite.frameTime) {
+          obj.sprite.frame = (obj.sprite.frame + 1) % obj.sprite.frameMax;
+          obj.sprite.frameCounter = 0;
+        }
+
+        const spriteWidth = 16 * (obj.sprite.adjustWidth || 5.8);
+        const spriteHeight = 18 * 4;
+
+        ctx.drawImage(
+          spriteImg, 
+          (obj.sprite.frame * (16 * 5.3)), obj.sprite.cutH, // qual parte cortar da imagem
+          spriteWidth, spriteHeight, // tamanho do corte
+          obj.x - offsetX, obj.y - offsetY, // posição onde desenhar
+          obj.w, obj.h // tamanho do desenho
+        );
+
+      }else{
+        ctx.fillStyle = obj.color;
+        ctx.fillRect(obj.x - offsetX, obj.y - offsetY, obj.w, obj.h);
+      }
+      // ctx.strokeStyle = "black";
+      // ctx.strokeRect(obj.x - offsetX, obj.y - offsetY, obj.w, obj.h);
+
+
+      // Verifica colisão com o jogador
+      if (isColliding(player, obj)) {
+        obj.onTouch(player); // Chama a função de toque do objeto
+      }
+    });
+
+    // Desenha hitbox
+    // ctx.strokeStyle = "red";
+    // ctx.strokeRect(player.x - offsetX, getPosY() - offsetY, player.w, getPlayerHeight());
+
+
+    // SPRITE
+
+    const {spriteX, spriteY} = getSprite();
+
+    const spriteWidth = 16 * 35;
+    const spriteHeight = 18 * 32;
+
+    ctx.save(); // salva o estado original do canvas
+    // ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    // // Define o desfoque da sombra
+    // ctx.shadowBlur = 5;
+    // // Define o deslocamento horizontal da sombra
+    // ctx.shadowOffsetX = 3;
+    // // Define o deslocamento vertical da sombra
+    // ctx.shadowOffsetY = 3;
+
+    if(player.direction === "L") {
+      ctx.scale(-1, 1); // inverte horizontalmente
+      ctx.translate(-70-player.x, getPosY()); // ajusta a posição para o lado esquerdo
+
+      ctx.drawImage(
+        personagemImg, 
+        spriteX +2, spriteY, spriteWidth, spriteHeight,  // qual parte cortar da imagem
+        0 -25 + offsetX, 0 - 40 - offsetY, player.w + 50, getPlayerHeight() + 40
+      );
+    }else{
+      ctx.drawImage(
+        personagemImg, 
+        spriteX + 2, spriteY, spriteWidth, spriteHeight,  // qual parte cortar da imagem
+        player.x -30 - offsetX, getPosY() - 40 - offsetY, player.w + 50, getPlayerHeight() + 40
+      );
+    }
+
+    ctx.restore(); // restaura o canvas
+
+    // Desenha mapa que estiver na frente
+    for (let y = startRow; y < endRow; y++) {
+      for (let x = startCol; x < endCol; x++) {
+        if (map[y] && map[y][x] === undefined) continue; // Verifica se a linha e coluna existem no mapa
+        const tileIndex = map[y][x];
+        if(tileIndex >= 10) continue;
+
+        // ctx.strokeStyle = "gray";
+        // ctx.strokeRect(x * tileSize -offsetX, y * tileSize -offsetY, tileSize, tileSize);
+
+        if (tileIndex === 0) continue; // Pula tiles vazios
+
+        // índice na spritesheet
+        const sx = (32 * (tileIndex - 1)) + 0.3;
+        const sy = 0;
+
+        // Nao mexer
+        const dx = x * tileSize - offsetX;
+        const dy = y * tileSize - offsetY;
+
+        ctx.drawImage(
+          tileset,
+          sx, sy, 32 - 0.5, 32, // src
+          dx, dy, tileSize, tileSize  // dest
+        );
+      }
+    }
+
+
+    // DIALOGO
+    if(dialogBox.ativo) desenharDialogo();
+    
+    
+    ctx.save();
+    // TITULO
+    // Define a cor da sombra
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    // Define o desfoque da sombra
+    ctx.shadowBlur = 0;
+    // Define o deslocamento horizontal da sombra
+    ctx.shadowOffsetX = 3;
+    // Define o deslocamento vertical da sombra
+    ctx.shadowOffsetY = 3;
+    ctx.fillStyle = "#f6d42f";
+    ctx.font = "bold 40px PixelFont";
+    ctx.fillText(GAME_TITLE, 20, 40);
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 30px PixelFont";
+    ctx.fillText(GAME_SUBTITLE, 120, 70);
+    ctx.restore();
+
+  }
+
+  function desenharDialogo() {
+      if (!dialogBox.ativo && dialogBox.alpha <= 0) return;
+
+      // Animação de fade-in
+      if (dialogBox.animando) {
+        dialogBox.alpha += 0.05;
+        if (dialogBox.alpha >= 1) {
+          dialogBox.alpha = 1;
+          dialogBox.animando = false;
+        }
+      }
+
+      const largura = 600;
+      const altura = 200;
+      const x = (canvas.width - largura) / 2;
+      const y = (canvas.height - altura) / 2;
+
+      ctx.save();
+      ctx.globalAlpha = dialogBox.alpha;
+
+      // Caixa
+      ctx.fillStyle = "#5c9d4f";
+      ctx.fillRect(x, y, largura, altura);
+      ctx.strokeStyle = "#fff";
+      ctx.strokeRect(x, y, largura, altura);
+
+      // Título
+      ctx.fillStyle = dialogBox.title.color || "#fff";
+      ctx.font = "bold 30px PixelFont";
+      ctx.fillText(dialogBox.title.text, x + (largura/2) -(dialogBox.title.text.length * 7), y + 30);
+
+      // Texto
+      ctx.fillStyle = dialogBox.body.color || "#fff";
+      ctx.font = "20px PixelFont";
+      const linhas = quebrarTexto(ctx, dialogBox.body.text, largura - 40);
+      linhas.forEach((linha, i) => {
+        ctx.fillText(linha, x + 20, y + 90 + i * 20);
+      });
+
+      // Botao OK
+      ctx.fillStyle = dialogBox.body.color || "#fff";
+      ctx.font = "20px PixelFont";
+      ctx.fillText("Fechar (A)", x + largura - 120, y + 180 );
+
+
+      if (dialogBox.exibirFim ) {
+        // Desenha a imagem final
+        ctx.drawImage(arteFinal, x - 500, y - 280, 800, 900);
+      }
+
+
+      ctx.restore();
+    }
+
+  function getSprite(){
+    let spriteX = 0;
+    let spriteY = 0;
+
+    if(isJumping){
+      // JUMP
+      spriteX = (16 * 34);
+      spriteY = 18 * 2;
+    }else if(!isJumping && !player.grounded){
+      // FALLING
+      spriteX = ((16 * 34) * 2) + 30;
+      spriteY = 18 * 2;
+
+    }else if(player.isRunning && player.isWalking){
+      // RUNNING
+      spriteX = player.frame * (16 * 34);
+      spriteY = 18 * 103.5;
+
+    }else if(player.isBall && player.isWalking){
+      // CROUNCH WALKING
+      spriteX = player.frame * (16 * 34); // 545 é a largura de cada quadro no spritesheet
+      spriteY = 18 * 135.5;
+
+    }else if(player.isBall && !player.isWalking){
+      // CROUNCH
+      spriteX = (16 * 34); // 545 é a largura de cada quadro no spritesheet
+      spriteY = 18 * 135.5;
+
+    }else if(player.isWalking){
+      // WALKING
+      spriteX = player.frame * (16 * 34); // 545 é a largura de cada quadro no spritesheet
+      spriteY = 18 * 69.5;
+    }else if(false){
+      // MID
+      // spriteX = 570 + 30;
+      // spriteY = 90;
+
+    }else{
+      // STAND
+      spriteX = player.frame * (16 * 34); // 545 é a largura de cada quadro no spritesheet
+      spriteY = 18 * 35.5;
+      // 699;
+    }
+    
+    return {spriteX, spriteY};
+  }
+
+  function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  document.addEventListener('click', (event) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    console.log(`Clicou em: (${x}, ${y})`);
+    changeMap(y, x); // Chama a função para mudar o mapa
+  });
+
+  function changeMap(x, y) {
+    const tileX = Math.floor(x / tileSize);
+    const tileY = Math.floor(y / tileSize);
+    console.log(`Mudando o mapa no tile: (${tileX}, ${tileY})`);
+    // Exemplo de mudança de mapa
+    // map[tileX][tileY] = 2;
+    map[tileX][tileY] == 1 ? 0 : 1; // Muda um tile específico para bloco
+  }
+
+  function getPosY(){
+    return player.y;
+  }
+
+  function getPlayerHeight(){
+    return player.isBall ? player.h / 2 : player.h;
+  }
+
+  function isColliding(a, b) {
+    return (
+      a.x < b.x + b.w &&
+      a.x + a.w > b.x &&
+      a.y < b.y + b.h &&
+      a.y + a.h > b.y
+    );
+  }
+
+  function quebrarTexto(ctx, texto, larguraMax) {
+    const palavras = texto.split(' ');
+    const linhas = [];
+    let linhaAtual = '';
+
+    for (let palavra of palavras) {
+      const testeLinha = linhaAtual + palavra + ' ';
+      const largura = ctx.measureText(testeLinha).width;
+      if (largura > larguraMax) {
+        linhas.push(linhaAtual);
+        linhaAtual = palavra + ' ';
+      } else {
+        linhaAtual = testeLinha;
+      }
+    }
+    linhas.push(linhaAtual);
+    return linhas;
+  }
+
+
+  loop();
+</script>
+</body>
+</html>
