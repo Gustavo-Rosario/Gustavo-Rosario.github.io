@@ -3,5 +3,8 @@
     "main": "scripts/core.js",
     "type": "module",
     "version": "1.0.0",
-    "description": "Jogo Metroid-like"
+    "description": "Jogo Metroid-like",
+    "scripts": {
+        "start": ""
+    }
 }
