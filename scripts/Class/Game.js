@@ -21,6 +21,9 @@ class Game {
     ACTUAL_SCREEN = null;
     DIAOLOG_CALLBACK = null;
 
+    canvas = null;
+    ctx = null;
+
     mapWidth = 0;
     mapHeight = 0;
 
@@ -63,10 +66,12 @@ class Game {
     keys = {};
 
 
-    constructor({player, canvas, ctx} = {}) {
+    constructor({player} = {}) {
 
-        this.ctx = ctx;
-        this.canvas = canvas;
+        // this.ctx = ctx;
+        // this.canvas = canvas;
+        this.canvas = document.getElementById("game");
+        this.ctx = this.canvas.getContext("2d");
 
         this.state = 'MENU';
 
@@ -101,7 +106,6 @@ class Game {
 
         fontePersonalizada.load().then(function (font) {
             document.fonts.add(font);
-            console.log("Fonte carregada!");
         });
 
         eventBus.addEventListener('showDialog', (e) => {
@@ -434,8 +438,11 @@ class Game {
     }
 
     resizeCanvas() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+        // Sem isso esta dando erro
+        const canvas = document.getElementById("game");
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
     }
 
         
