@@ -7,8 +7,10 @@ export default {
     y: TILE_SIZE * 23,
     w: 350,
     h: 16,
-    color: "green",
+    color: "transparent",
     onTouch: function(player) {
+
+      player.timerStart = Date.now(); // Inicia o timer ao tocar no objeto
       mostrarDialogo({ color: 'yellow', text: "Em busca do Chakras"},
         {
           text:"Encontre a harmonia dos chakras e evolua seu espírito para anvaçar até o final                                                                             Controles: (B) - Pular              (Setas) - Direção"

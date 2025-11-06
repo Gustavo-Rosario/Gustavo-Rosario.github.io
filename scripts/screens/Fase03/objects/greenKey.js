@@ -1,6 +1,6 @@
 const TILE_SIZE = 75;
 export default{
-    x: TILE_SIZE * 49,
+    x: TILE_SIZE * 50,
     y: TILE_SIZE * 27,
     w: 90,
     h: 90,
