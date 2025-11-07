@@ -311,6 +311,7 @@ class Game {
 
         this.ctx.fillStyle = "#37b8e3ff";
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
         // ========== DESENHA FUNDO ==========
         this.drawParallax(this.bgParallaxLayers);
 
@@ -327,10 +328,11 @@ class Game {
         // this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         // ========== DESENHA TITULO E OPÇÕES ==========
+        const tituloWidth = this.canvas.width * 0.55;
         this.ctx.drawImage(
             this.titleImg,
-            this.canvas.width / 2 - 550, 100,
-            1000, 500
+            this.canvas.width / 2 - (tituloWidth * 0.55), tituloWidth * 0.05,
+            tituloWidth, tituloWidth /2
         );
 
         this.ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
@@ -341,7 +343,7 @@ class Game {
         
         this.options.forEach((opt, i) => {
             this.ctx.fillStyle = i === this.selectedOption ? "rgba(220, 251, 45, 1)" : "#e1dfdfff";
-            this.ctx.fillText(opt, this.canvas.width / 2 - 150, 680 + i * 60);
+            this.ctx.fillText(opt, this.canvas.width / 2 - (tituloWidth * 0.18), (tituloWidth * 0.65) + i * 60);
         });
 
 
