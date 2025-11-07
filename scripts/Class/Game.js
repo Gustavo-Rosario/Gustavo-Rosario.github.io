@@ -8,7 +8,7 @@ class Game {
     STATE_LIST = ['MENU', 'PLAYING', 'PAUSED', 'GAMEOVER', 'LOADING'];
     GAME_TITLE = "Adventure";
     GAME_SUBTITLE = "The Seven Chakras";
-    GAME_VERSION = "v1.0.0";
+    GAME_VERSION = "v0.1.3";
     TILE_SIZE = 65;
     SPRITE_SHEET_SIZE = 32 * 5;
     DEBUG = false;
@@ -29,6 +29,9 @@ class Game {
 
     last = performance.now();
     load = 0;
+
+    selectedOption = 0;
+    options = ["Start Game", "Load Game"];
 
     // CAIXA DE DIALOGO
     dialogBox = {
@@ -78,7 +81,7 @@ class Game {
         this.player = player;
 
         window.addEventListener('resize', this.resizeCanvas);
-        // resizethis.Canvas();
+        this.resizeCanvas();
 
         // ================== INIT =======================================
         // Carrega a tela inicial
@@ -101,6 +104,77 @@ class Game {
         this.tileset = new Image();
         this.tileset.src = '../assets/imgs/tiles.png';
 
+        this.titleImg = new Image();
+        this.titleImg.src = '../assets/imgs/title.png';
+
+        // this.titleBgImg = new Image();
+        // this.titleBgImg.src = '../assets/imgs/title-background.png';
+        // this.bgTitle = {
+        //     frame: 0,             // quadro atual
+        //     frameMax: 30,          // total de quadros
+        //     frameTime: 5,        // tempo por quadro (em frames de jogo)
+        //     frameCounter: 0       // contador de tempo
+        // }
+
+        // Camadas do fundo
+        const l1 = new Image();
+        l1.src = '../assets/imgs/bg-layer-1.png';
+
+        const l2 = new Image();
+        l2.src = '../assets/imgs/bg-layer-2.png';
+
+        const l3 = new Image();
+        l3.src = '../assets/imgs/bg-layer-3.png';
+
+        const l4 = new Image();
+        l4.src = '../assets/imgs/bg-layer-4.png';
+
+        const l5 = new Image();
+        l5.src = '../assets/imgs/bg-layer-5.png';
+
+        this.bgParallaxLayers = [
+            {
+                img: l1,
+                speed: 1,
+                position: {x: 0, y: 0},
+                sizeFinal: {w: this.canvas.width, h: this.canvas.height},
+                cutSize: {w: 160, h: 90},
+                offsets: 0
+            },
+            {
+                img: l2,
+                speed: 2,
+                position: {x: 0, y: 0},
+                sizeFinal: {w: this.canvas.width, h: this.canvas.height},
+                cutSize: {w: 160, h: 90},
+                offsets: 0
+            },
+            {
+                img: l3,
+                speed: 5,
+                position: {x: 0, y: 0},
+                sizeFinal: {w: this.canvas.width, h: this.canvas.height},
+                cutSize: {w: 160, h: 90},
+                offsets: 0
+            },
+            {
+                img: l4,
+                speed: 7,
+                position: {x: 0, y: 0},
+                sizeFinal: {w: this.canvas.width, h: this.canvas.height},
+                cutSize: {w: 160, h: 90},
+                offsets: 0
+            },
+            {
+                img: l5,
+                speed: 9,
+                position: {x: 0, y: 0},
+                sizeFinal: {w: this.canvas.width, h: this.canvas.height},
+                cutSize: {w: 160, h: 90},
+                offsets: 0
+            }
+        ]
+
 
         const fontePersonalizada = new FontFace("PixelFont", "url('../fonts/PixelifySans-VariableFont_wght.ttf')");
 
@@ -117,17 +191,52 @@ class Game {
         document.addEventListener("keydown", e => {
             const saida = this.deParaTeclado[e.key];
             // console.log("KEY: ", e.key, "\nSaida: ", saida);
-            this.keys[saida] = true
+            this.keys[saida] = true;
+
+            if (this.state == "MENU") {
+                if (e.key === "ArrowUp") this.selectedOption = (this.selectedOption - 1 + this.options.length) % this.options.length;
+                if (e.key === "ArrowDown") this.selectedOption = (this.selectedOption + 1) % this.options.length;
+                if (e.key === "Enter") this.handleMenuSelection();
+            }
         });
         document.addEventListener("keyup", e => this.keys[this.deParaTeclado[e.key]] = false);
 
 
         window.addEventListener("gamepadconnected", e => this.startGamepadPolling());
 
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && this.state === "PLAYING") {
+                this.state = "MENU";
+            }
+        });
+
+    }
+
+    handleMenuSelection() {
+        // Audio de seleção
+        const selectSound = document.getElementById("menuConfirmSelect");
+        selectSound.volume = 0.5;
+        selectSound.play();
+
+        // setTimeout(() => {
+        //     selectSound.pause();
+        //     selectSound.currentTime = 0;
+        // }, 300);
+
+        if (this.options[this.selectedOption] === "Start Game") {
+            this.state = "PLAYING";
+        } else if (this.options[this.selectedOption] === "Load Game") {
+            this.mostrarDialogo("Em implementação", "Aguarde...");
+            // this.state = "LOADING";
+            // setTimeout(() => {
+            //     this.state = "PLAYING"; // simula carregamento
+            // }, 1000);
+        }
     }
 
     async startGame(){
         // =========================== PLAYER ===========================
+
         console.log("Carregando jogador...");  
 
         await this.reloadScreen(this.SCREEN_NAME, {noLoad: true});
@@ -150,6 +259,8 @@ class Game {
     }
 
     getState(){
+
+        
         return this.state;
     }
 
@@ -161,17 +272,120 @@ class Game {
      * 
     */
     gameLoop(){
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
         this.update();
-        this.draw();
+        // this.draw();
         requestAnimationFrame(() => this.gameLoop());
     }
 
     update(){
         // CHECAR STATE DO JOGO
-        
+        if(this.state == 'MENU') {
+            this.drawMenu();
+        }
+        else if(this.state == 'PLAYING') {
+            this.drawGame();
+        }
+        else if(this.state == "LOAD") {
+            this.ctx.fillStyle = "#222";
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.fillStyle = "#fff";
+            this.ctx.font = "32px sans-serif";
+            this.ctx.textAlign = "center";
+            this.ctx.fillText("Carregando...", this.canvas.width / 2, this.canvas.height / 2);
+        }
 
+        
+    }
+
+    drawMenu() {
+
+        // Musica de fundo
+        const menuTheme = document.getElementById("menuTheme");
+        if (menuTheme.paused) {
+            menuTheme.volume = 0.3;
+            menuTheme.play();
+        }
+
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.imageSmoothingEnabled = false;
+
+        this.ctx.fillStyle = "#37b8e3ff";
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        // ========== DESENHA FUNDO ==========
+        this.drawParallax(this.bgParallaxLayers);
+
+        this.ctx.save();
+
+        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+        this.ctx.shadowBlur = 0;
+        this.ctx.shadowOffsetX = 5;
+        this.ctx.shadowOffsetY = 5;
+        this.ctx.font = "bold 32px PixelFont";
+
+        // this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        // this.ctx.fillStyle = "#37b8e3ff";
+        // this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // ========== DESENHA TITULO E OPÇÕES ==========
+        this.ctx.drawImage(
+            this.titleImg,
+            this.canvas.width / 2 - 550, 100,
+            1000, 500
+        );
+
+        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+        this.ctx.shadowBlur = 0;
+        this.ctx.shadowOffsetX = 3.5;
+        this.ctx.shadowOffsetY = 3.5;
+        this.ctx.font = "bold 32px PixelFont";
+        
+        this.options.forEach((opt, i) => {
+            this.ctx.fillStyle = i === this.selectedOption ? "rgba(220, 251, 45, 1)" : "#e1dfdfff";
+            this.ctx.fillText(opt, this.canvas.width / 2 - 150, 680 + i * 60);
+        });
+
+
+        // VERSION
+        this.ctx.font = "16px PixelFont";
+        this.ctx.fillStyle = "#ffffffaa";
+        this.ctx.textAlign = "right";
+        this.ctx.fillText(this.GAME_VERSION, this.canvas.width - 20, this.canvas.height - 20);
+
+        // Creator credit
+        this.ctx.font = "16px PixelFont";
+        this.ctx.fillStyle = "#ffffffaa";
+        this.ctx.textAlign = "left";
+        this.ctx.fillText("Created by GMaster", 20, this.canvas.height - 20);
+
+        this.ctx.restore();
+    }
+
+    drawParallax(layers) {
+        layers.forEach((layer, i) => {
+            layer.offsets -= layer.speed;
+            const w = layer.sizeFinal.w;
+            if (layer.offsets <= -w) layer.offsets = 0;
+
+            this.ctx.drawImage(
+                layer.img,
+                layer.offsets, 0,
+                layer.sizeFinal.w, layer.sizeFinal.h
+            );
+            this.ctx.drawImage(
+                layer.img,
+                layer.offsets + w, 0,
+                layer.sizeFinal.w, layer.sizeFinal.h);
+        });
+    }
+
+
+    drawGame(){
+        // Desliga som do menu
+        const menuTheme = document.getElementById("menuTheme");
+        if (!menuTheme.paused) {
+            menuTheme.pause();
+            menuTheme.currentTime = 0;
+        }
 
         if (this.dialogBox.ativo) {
             if (this.keys["OK"]) this.fecharDialogo(); // Fecha o diálogo se pressionar OK
@@ -242,6 +456,8 @@ class Game {
         }
 
         this.atualizarAnimacao();
+
+        this.draw();
     }
 
 
@@ -282,8 +498,6 @@ class Game {
                 // Nao mexer
                 const dx = x * this.TILE_SIZE - offsetX;
                 const dy = y * this.TILE_SIZE - offsetY;
-
-                this.ctx.imageSmoothingEnabled = false;
 
 
                 this.ctx.drawImage(
@@ -596,7 +810,7 @@ class Game {
 
         // TIMER
         if(this.player.timerStart && !this.player.endTime){
-            const elapsed = Math.floor((performance.now() -4) / 1000);
+            const elapsed = Math.floor((performance.now() - this.player.timerStart) / 1000);
             const minutes = String(Math.floor(elapsed / 60)).padStart(2, '0');
             const seconds = String(elapsed % 60).padStart(2, '0');
             this.ctx.font = "bold 30px PixelFont";
@@ -785,8 +999,11 @@ class Game {
         requestAnimationFrame(() => this.checkGamepad(this.deParaGamepad));
     }
 
+    // 
+    
     checkGamepad(callback) {
         const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+        const now = performance.now();
 
         for (let gp of gamepads) {
             if (!gp) continue;
@@ -794,15 +1011,51 @@ class Game {
             for (let index = 0; index < gp.buttons.length; index++) {
                 const button = gp.buttons[index];
                 const action = callback(index);
+
+                // Inicializa controle de cooldown se ainda não existir
+                if (!this.lastButtonPress) this.lastButtonPress = {};
+                const cooldown = 500; // 1 segundo
+
                 if (button.pressed) {
-                    this.keys[action] = true
+                    
+
+                    if (this.state === "MENU"){
+                        if (!this.lastButtonPress[index] || now - this.lastButtonPress[index] > cooldown) {
+                            this.lastButtonPress[index] = now;
+                            this.sendCommandToMenu(action);
+                        }
+                    }
+                    this.keys[action] = true;
                 } else {
-                    this.keys[action] = false
+                    this.keys[action] = false;
+                    // Reseta tempo se quiser permitir novo clique ao soltar
+                    // delete this.lastButtonPress[index];
                 }
             }
         }
 
         requestAnimationFrame(() => this.checkGamepad(callback));
+    }
+
+    sendCommandToMenu(command){
+        const changeSelectionSound = document.getElementById("menuChangeSelect");
+        changeSelectionSound.currentTime = 0.0;
+        changeSelectionSound.volume = 0.2;
+
+        // Verifica controle
+        switch(command){
+            case "ArrowUp":
+                this.selectedOption = (this.selectedOption - 1 + this.options.length) % this.options.length;
+                changeSelectionSound.play();
+                break;
+            case "ArrowDown":
+                this.selectedOption = (this.selectedOption + 1) % this.options.length;
+                changeSelectionSound.play();
+                break;
+            case "OK":
+                this.handleMenuSelection();
+                break;
+        }
     }
 
     deParaGamepad(button) {

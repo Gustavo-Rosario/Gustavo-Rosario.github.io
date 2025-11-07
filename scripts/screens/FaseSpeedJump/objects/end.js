@@ -15,7 +15,7 @@ export default {
       frameCounter: 0 // Contador de tempo para animação
     },
     onTouch: function(player) {
-        player.endTime = Date.now();
+        player.endTime = performance.now();
         player.totalTime = player.endTime - player.timerStart;
 
         const bgm = document.getElementById("msgFinal");
