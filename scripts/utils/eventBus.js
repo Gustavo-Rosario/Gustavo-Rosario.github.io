@@ -16,3 +16,7 @@ export const alterarTela = (newScreen, options) => {
         detail: { newScreen, options }
     }));
 }
+
+export const alterarState = (newState) => {
+    eventBus.dispatchEvent(new CustomEvent('changeState', { detail: {newState} }));
+}

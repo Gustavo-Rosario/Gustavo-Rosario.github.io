@@ -6,7 +6,7 @@ export const getCanvasContext = () => {
         throw new Error(`Canvas with id '${baseInfo.CANVAS_ID}' not found.`);
     }
     
-    const context = canvas.getContext('2d', {willReadFrequently: true});
+    const context = canvas.getContext('2d', {willReadFrequently: true, alpha: true});
     if (!context) {
         throw new Error(`Could not get 2D context for canvas with id '${baseInfo.CANVAS_ID}'.`);
     }

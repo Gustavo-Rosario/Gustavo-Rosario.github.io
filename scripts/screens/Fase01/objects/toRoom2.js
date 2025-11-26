@@ -10,6 +10,6 @@ export default {
     color: "trasparent",
     onTouch: function(player) {
         // Volta para mapa do mundo
-        alterarTela('Fase02', {playerStart: { x: TILE_SIZE * 6, y: TILE_SIZE * 15}});
+        alterarTela('Room02', {playerStart: { x: TILE_SIZE * 6, y: TILE_SIZE * 19, direction: player.direction}});
     }
 }

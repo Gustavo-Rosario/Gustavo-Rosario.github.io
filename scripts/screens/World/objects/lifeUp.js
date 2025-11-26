@@ -16,7 +16,7 @@ export default {
     onTouch: function(player) {
         // player.saveGame();
         player.isMeditating = true;
-        if(player.lives < 100) player.lives += 0.02; // Aumenta 1 vida
+        if(player.hp.current < player.hp.max) player.hp.current += 1; // Aumenta 1 vida
     //   player.jumpForce += player.jumpForce; // Aumenta a força do pulo
     //   mostrarDialogo({ color: 'yellow', text: "Pulo VANS"}, "Você não pulou um legday. Então agora PULE mais alto com o Vans! Basta segurar o botão de pulo ( B )");
 

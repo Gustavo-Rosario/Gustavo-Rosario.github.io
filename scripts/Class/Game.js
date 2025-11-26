@@ -5,16 +5,45 @@ import Memory from "../utils/memory.js";
 
 class Game {
 
-    STATE_LIST = ['MENU', 'PLAYING', 'PAUSED', 'GAMEOVER', 'LOADING'];
-    GAME_TITLE = "Adventure";
+    SCREENS = [
+        'World',
+        'Fase01',
+        'Room02',
+        'Room03',
+        'Room04',
+        'Room05',
+        'Room06',
+        'Room07',
+        'Room08',
+        'Room09',
+        'Room10',
+        'Room11',
+        'Room12',
+        'Room13',
+        'Room14',
+        'Room15',
+        'Room16',
+        'Room17',
+        'FinalRoom'
+    ];
+    SCREEN_MODULES = {};
+
+    STATE_LIST = ['MENU', 'PLAYING', 'PAUSED', 'GAMEOVER', 'LOADING', 'CREDITS'];
+    GAME_TITLE = "Brenda";
     GAME_SUBTITLE = "The Seven Chakras";
-    GAME_VERSION = "v0.1.3";
+    GAME_VERSION = "v1.0.0";
     TILE_SIZE = 65;
     SPRITE_SHEET_SIZE = 32 * 5;
     DEBUG = false;
     MAX_GRAVITY = 25;
 
-    TILES_BG = [0, 30,31,32,33, 46];
+    TILES_BG = [0, 30,31,32,33, 46,61,62,63,64,65,66, 67,81,82,83,84,85,86,
+        108,109,110,111,112,114,115,116,117,118,119, 124,125,126,127, 138, 139, 140, 141
+    ];
+
+    NOT_SOLID_TILES = [0, 30,31,32,33, 46,61,62,63,64,65,66, 67,81,82,83,84,85,86,
+        108,109,110,111,112,113,114,115,116,117,118,119,121,122, 124,125,126,127, 138, 139, 140, 141, 142, 143, 144, 145, 146, 148, 147, 149
+    ];
 
     SCREEN_NAME = "World";
     SCREEN_MODULE = null;
@@ -31,7 +60,7 @@ class Game {
     load = 0;
 
     selectedOption = 0;
-    options = ["Start Game", "Load Game"];
+    options = ["Start Game"];
 
     // CAIXA DE DIALOGO
     dialogBox = {
@@ -63,14 +92,14 @@ class Game {
         "d": "ArrowRight",
         " ": "Jump", // Espaço para pular
         "Enter": "OK", // Enter para confirmar
-        "Shift": "Run" // Shift para correr
+        "Shift": "Run", // Shift para correr,
+        "Esc": "Start"
     };
 
     keys = {};
 
-
     constructor({player} = {}) {
-
+        this.GRAVITY = 0.5;
         // this.ctx = ctx;
         // this.canvas = canvas;
         this.canvas = document.getElementById("game");
@@ -84,15 +113,30 @@ class Game {
         this.resizeCanvas();
 
         // ================== INIT =======================================
+        this.init();
+
+    }
+
+    async init(){
+
         // Carrega a tela inicial
-        this.reloadScreen(this.SCREEN_NAME, {noLoad: true});
+        // this.reloadScreen(this.SCREEN_NAME, {noLoad: true});
 
         // Revisa mudanças de tela
-        eventBus.addEventListener('changeScreen', async (e) => {        
+        eventBus.addEventListener('changeScreen', (e) => {        
             const { newScreen, options } = e.detail;
 
+            
+            this.player.tempObjects = [];
+            
             this.SCREEN_NAME = newScreen;
-            await this.reloadScreen(newScreen, options);
+            this.reloadScreen(newScreen, options);
+        });
+
+        // Altera o state do jogo
+        eventBus.addEventListener('changeState', (e) => {
+            const { newState } = e.detail;
+            this.state = newState;
         });
 
         this.jumpSong = document.getElementById("jump");
@@ -104,8 +148,14 @@ class Game {
         this.tileset = new Image();
         this.tileset.src = '../assets/imgs/tiles.png';
 
+        this.pauseImg = new Image();
+        this.pauseImg.src = '../assets/imgs/pause.png';
+
         this.titleImg = new Image();
         this.titleImg.src = '../assets/imgs/title.png';
+
+        this.itemsImg = new Image();
+        this.itemsImg.src = '../assets/imgs/items.png';
 
         // this.titleBgImg = new Image();
         // this.titleBgImg.src = '../assets/imgs/title-background.png';
@@ -210,6 +260,77 @@ class Game {
             }
         });
 
+
+        // CARREGA PATTERNS
+        this.loadPatterns();
+
+        this.topPadding = 0;
+
+        this.grayscalePerc = 0;
+    }
+
+
+    async loadScreensToMemory(){
+        this.IS_LOADING = true;
+        try{
+            for(let screen of this.SCREENS){
+                this.SCREEN_MODULES[screen] = await import(`../screens/${screen}/index.js`);
+                
+            }
+        }catch(err){
+            console.log(err);
+        }finally{
+            this.IS_LOADING = false;
+        }
+        
+    }
+
+    loadPatterns(){
+
+        //Pattern
+        const caveImg = new Image();
+        caveImg.src = "../assets/imgs/cave-pattern.png"
+        this.cavePattern =  null;
+
+        caveImg.onload = () => {
+            // 🔹 Cria um canvas temporário para redimensionar a imagem
+            const tempCanvas = document.createElement("canvas");
+            const scale = 3; // aumente o fator conforme quiser
+            tempCanvas.width = caveImg.width * scale;
+            tempCanvas.height = caveImg.height * scale;
+
+            const tctx = tempCanvas.getContext("2d");
+            tctx.imageSmoothingEnabled = false;
+            tctx.drawImage(caveImg, 0, 0, tempCanvas.width, tempCanvas.height);
+
+            // 🔹 Cria o pattern a partir da imagem ampliada
+            this.cavePattern = this.ctx.createPattern(tempCanvas, "repeat");
+        }
+
+
+        //MX - Pattern
+        const mxImg = new Image();
+        mxImg.src = "../assets/imgs/mx-pattern.png"
+        this.mxPattern =  null;
+
+        mxImg.onload = () => {
+            // 🔹 Cria um canvas temporário para redimensionar a imagem
+            const tempCanvas = document.createElement("canvas");
+            const scale = 3; // aumente o fator conforme quiser
+            tempCanvas.width = mxImg.width * scale;
+            tempCanvas.height = mxImg.height * scale;
+
+            const tctx = tempCanvas.getContext("2d");
+            tctx.imageSmoothingEnabled = false;
+            tctx.drawImage(mxImg, 0,0, tempCanvas.width, tempCanvas.height);
+            
+            // Escurecendo
+            tctx.fillStyle = "rgba(0,0,0,.3)";
+            tctx.fillRect(0,0, tempCanvas.width, tempCanvas.height);
+
+            // 🔹 Cria o pattern a partir da imagem ampliada
+            this.mxPattern = this.ctx.createPattern(tempCanvas, "repeat");
+        }
     }
 
     handleMenuSelection() {
@@ -236,13 +357,13 @@ class Game {
 
     async startGame(){
         // =========================== PLAYER ===========================
+        
+        // Carrega todas as telas
+        await this.loadScreensToMemory();
 
         console.log("Carregando jogador...");  
 
-        await this.reloadScreen(this.SCREEN_NAME, {noLoad: true});
-
-        this.personagemImg = new Image();
-        this.personagemImg.src = this.player.spriteSheet.src;
+        this.reloadScreen(this.SCREEN_NAME, {noLoad: true});
 
         // =========================== MAPA ===========================
         this.mapWidth = this.ACTUAL_SCREEN.map[0].length;
@@ -285,6 +406,9 @@ class Game {
         else if(this.state == 'PLAYING') {
             this.drawGame();
         }
+        else if(this.state == 'PAUSED'){
+            this.drawPause();
+        }
         else if(this.state == "LOAD") {
             this.ctx.fillStyle = "#222";
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -292,9 +416,116 @@ class Game {
             this.ctx.font = "32px sans-serif";
             this.ctx.textAlign = "center";
             this.ctx.fillText("Carregando...", this.canvas.width / 2, this.canvas.height / 2);
+        }else if(this.state == 'CREDITS'){
+            this.updateCredits();
         }
 
         
+    }
+
+    updateCredits(){
+
+        // Toca musica de final
+        const endingSong = document.getElementById("ending");
+        if(endingSong.paused){
+            endingSong.volume = 0.6; // Ajusta o volume
+            endingSong.play();
+        }
+
+        if(this.topPadding > -3300){
+
+
+            this.topPadding -= 0.8;
+
+            if(this.topPadding < -300 && this.grayscalePerc < 100){
+                this.grayscalePerc += 0.5;
+            }
+
+            if(this.topPadding < -3050 && endingSong.volume > 0){
+                const newVol = endingSong.volume - 0.002;
+                endingSong.volume = newVol < 0 ? 0 : newVol;
+            }
+        } 
+        else{
+            if(!this.TOCOU_FINAL){
+                this.TOCOU_FINAL = true;
+
+                const bgm = document.getElementById("bjXau");
+                bgm.volume = 1; // Ajusta o volume
+                bgm.play();
+            }
+        }
+
+        this.drawCredits();
+
+    }
+
+    // Função para desenhar os créditos
+    drawCredits() {
+        // const ctx = this.ctx;
+        // const canvas = this.canvas;
+
+        const canvas = this.canvas;
+        const ctx = this.ctx;
+
+        ctx.imageSmoothingEnabled = false;
+
+        // Definindo as propriedades do canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpa a tela
+
+        ctx.fillStyle = "#1d1d1dff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = 'white'; // Define a cor do texto padrão (branco)
+        ctx.font = 'bold 30px PixelFont'; // Define a fonte do texto
+
+        // Lista de créditos
+        const creditos = [
+            { text: "Criado por", color: 'yellow', topPadding: 200 },
+            { text: "GMaster", color: 'white', topPadding: 100 },
+            { text: "Diretor", color: 'yellow', topPadding: 135  },
+            { text: "GMaster", color: 'white', topPadding: 100 },
+            { text: "Coprodutor", color: 'yellow', topPadding: 120.5  },
+            { text: "GMaster", color: 'white', topPadding: 100 },
+            { text: "Artista", color: 'yellow', topPadding: 115  },
+            { text: "GMaster", color: 'white', topPadding: 100 },
+            { text: "Efeitos especiais", color: 'yellow', topPadding: 111  },
+            { text: "GMaster", color: 'white', topPadding: 100 },
+            { text: "Desenvolvimento", color: 'yellow', topPadding: 109  },
+            { text: "GMaster", color: 'white', topPadding: 100 },
+            { text: "Localização", color: 'yellow', topPadding: 108  },
+            { text: "GMaster", color: 'white', topPadding: 100 },
+            { text: "Agradecimentos especiais", color: 'yellow', topPadding: 107  },
+            { text: "Brenda Cenzi", color: 'white', topPadding: 100  },
+            { text: "FIM", color: 'yellow', topPadding: 134, fontSize: 80 }
+        ];
+
+        // Centralizar o texto na tela
+        const centerX = canvas.width / 2;
+        let startY = this.topPadding; // Começo da posição Y
+
+        ctx.filter = `grayscale(${this.grayscalePerc}%)`;
+        ctx.drawImage(
+            this.titleImg,
+            canvas.width/2 - canvas.width * 0.2, canvas.height * 0.2,
+            canvas.width * 0.4, canvas.width * 0.24 
+        );
+        ctx.filter = "none"; // importante resetar!
+
+        // Desenhando o texto
+        creditos.forEach((credito,i) => {
+            ctx.fillStyle = credito.color; // Definir a cor do texto
+            const textWidth = ctx.measureText(credito.text).width * 1.7; // Medir a largura do texto
+
+            ctx.font = `${credito.color == 'white' ? 'normal' : "bold"} ${credito.fontSize || 30}px PixelFont`;
+
+            this.drawText(credito.text, centerX - textWidth / 2, 700 +  startY + ((40 + credito.topPadding) * (i+1)), {
+                fontSize: credito.fontSize,
+                fontColor: credito.color
+            })
+            // ctx.fillText(credito.text, centerX - textWidth / 2, startY + ((40 + credito.topPadding) * (i+1))); // Centralizar e desenhar o texto
+            // startY += this.topPadding + 240; // Espaço entre os créditos
+        });
     }
 
     drawMenu() {
@@ -382,6 +613,14 @@ class Game {
 
 
     drawGame(){
+        // DIALOGO
+        if (this.dialogBox.ativo) this.desenharDialogo();
+        // Verifica gameOver
+        if (this.player.hp.current < 1) {
+            // Game Over
+            this.gameOver();
+        }
+
         // Desliga som do menu
         const menuTheme = document.getElementById("menuTheme");
         if (!menuTheme.paused) {
@@ -397,60 +636,83 @@ class Game {
             return; // pausa o jogo
         }
 
-        // Controles horizontais
-        if (this.keys["ArrowLeft"]) {
-            this.player.direction = "L";
-            this.player.vx = this.keys["Run"] && this.player.haveSpeedBooster && !this.player.isBall ? -(this.player.walkForce * 3.5) : -this.player.walkForce;
-            this.player.isWalking = true;
-        } else if (this.keys["ArrowRight"]) {
-            this.player.direction = "R";
-            this.player.vx = this.keys["Run"] && this.player.haveSpeedBooster && !this.player.isBall ? this.player.walkForce * 3.5 : this.player.walkForce;
-            this.player.isWalking = true;
-        } else {
-            this.player.vx = 0;
-            this.player.isWalking = false;
-        }
 
-        this.player.isRunning = this.keys["Run"] && this.player.haveSpeedBooster && !this.player.isBall;
+        if(this.player.isKB){
+            if(this.player.vx > 0) this.player.vx = -5;
+            else if(this.player.vx < 0) this.player.vx = 5;
 
-        if (this.player.haveBall) {
-            if (this.keys["ArrowDown"]) this.player.isBall = true;
-            if (this.keys["ArrowUp"]) this.player.isBall = false;
-        }
+            if(this.player.vy > 0) this.player.vy = -5;
+            else if(this.player.vy < 0) this.player.vy = 5;
 
-        // JUMP
-        if (this.keys["Jump"] && (!this.player.isBall || (this.player.isBall && this.player.haveSpringBall))) {
-            if (this.player.grounded) {
-                this.jumpSong.currentTime = 0.0;
-                this.jumpSong.volume = 0.1;
-                this.jumpSong.play();
-                this.isJumping = true;
-                this.jumpPressedTime = 0;
-                this.player.vy = -6;
-                this.player.grounded = false;
-            } else if (this.isJumping && this.jumpPressedTime < this.maxJumpTime) {
-                const finalJump = this.player.haveDoubleJump ? this.player.jumpForce * 1.7 : this.player.jumpForce;
-                this.player.vy = -(finalJump);
+            this.player.isKB = false;
+        }else{
+
+            // Controles horizontais
+            if (this.keys["ArrowLeft"]) {
+                this.player.direction = "L";
+                this.player.vx = this.keys["Run"] && this.player.haveSpeedBooster && !this.player.isBall ? -(this.player.walkForce * 3.5) : -this.player.walkForce;
+                this.player.isWalking = true;
+            } else if (this.keys["ArrowRight"]) {
+                this.player.direction = "R";
+                this.player.vx = this.keys["Run"] && this.player.haveSpeedBooster && !this.player.isBall ? this.player.walkForce * 3.5 : this.player.walkForce;
+                this.player.isWalking = true;
+            } else {
+                this.player.vx = 0;
+                this.player.isWalking = false;
             }
-            this.jumpPressedTime++;
-        } else {
-            this.isJumping = false;
+    
+            this.player.isRunning = this.keys["Run"] && this.player.haveSpeedBooster && !this.player.isBall;
+    
+            if (this.player.haveBall) {
+                if (this.keys["ArrowDown"]) this.player.isBall = true;
+                if (this.keys["ArrowUp"]) this.player.isBall = false;
+            }
+    
+            // JUMP
+            if (this.keys["Jump"] && (!this.player.isBall || (this.player.isBall && this.player.haveSpringBall))) {
+                if (this.player.grounded) {
+                    this.jumpSong.currentTime = 0.0;
+                    this.jumpSong.volume = 0.1;
+                    this.jumpSong.play();
+                    this.isJumping = true;
+                    this.jumpPressedTime = 0;
+                    this.player.vy = -6;
+                    this.player.grounded = false;
+                } else if (this.isJumping && this.jumpPressedTime < this.maxJumpTime) {
+                    const finalJump = this.player.haveDoubleJump ? this.player.jumpForce * 1.7 : this.player.jumpForce;
+                    this.player.vy = -(finalJump);
+                }
+                this.jumpPressedTime++;
+            } else {
+                this.isJumping = false;
+            }
         }
+
+        // Soltar objeto
+        if(this.keys["Spring"]){
+            this.player.useUpForce(this.ACTUAL_SCREEN);
+            
+        }
+
+        // Atualiza IA de inimigo
+        if(this.ACTUAL_SCREEN.enemies && this.ACTUAL_SCREEN.enemies.length > 0){
+            this.ACTUAL_SCREEN.enemies
+            .filter(e => e.condition && typeof e.condition == 'function' ? e.condition() : true)
+            .forEach(e => e.update(this.ctx, this.canvas, this.player));
+        }
+
+
+
 
         // Gravidade
-        if (this.player.vy < this.MAX_GRAVITY) this.player.vy += 0.5;
+        const gravidade = this.ACTUAL_SCREEN.gravity || this.GRAVITY;
+        if (this.player.vy < this.MAX_GRAVITY) this.player.vy += gravidade;
 
         // Movimento horizontal
         this.player.x += this.player.vx;
 
         // Verifica colisão horizontal (mantive sua lógica, usando isSolid atualizado)
         this.checkPlayerCollision();
-
-        // Se o jogador sair do mapa, faz respawn
-        
-        // this.player.x + this.player.w < 0 || // Saiu pela esquerda
-        // this.player.x > this.mapWidth ||     // Saiu pela direita
-        // this.player.y + this.player.h < 0    // Saiu por cima (opcional)
         if (
             this.player.y > this.mapHeight * this.TILE_SIZE +10   // Caiu pra fora por baixo
         ) {
@@ -458,6 +720,11 @@ class Game {
         }
 
         this.atualizarAnimacao();
+
+        // Chama efeito ambiental da fase
+        if(this.ACTUAL_SCREEN.envEffect){
+            this.ACTUAL_SCREEN.envEffect(this.player);
+        }
 
         this.draw();
     }
@@ -468,12 +735,32 @@ class Game {
 
         this.ctx.imageSmoothingEnabled = false;
 
-
-        // Adiciona background
-        this.ctx.fillStyle = this.ACTUAL_SCREEN.background || "#b2b3c8";
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        // ==================== BACKGROUND =======================
+        // Verifica se há background personalizado
 
         const { offsetX, offsetY } = this.getCameraOffset();
+
+        if(this.ACTUAL_SCREEN.drawBg){
+            this.ACTUAL_SCREEN.drawBg({
+                canvas: this.canvas,
+                ctx: this.ctx,
+                cameraOffset: this.getCameraOffset()
+            });
+        }else{
+            // Adiciona background
+            this.ctx.fillStyle = this.ACTUAL_SCREEN.background || "#3e417eff";
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+
+        if(this.ACTUAL_SCREEN.bgPattern){
+            this.ctx.save();
+            this.ctx.translate(-offsetX, 0); // move o padrão
+
+            this.ctx.fillStyle = this[this.ACTUAL_SCREEN.bgPattern];
+            this.ctx.fillRect(offsetX, 0, this.canvas.width + offsetX, this.canvas.height);
+
+            this.ctx.restore();
+        }
 
         const startCol = Math.floor(offsetX / this.TILE_SIZE);
         const endCol = Math.ceil((offsetX + this.canvas.width) / this.TILE_SIZE);
@@ -511,8 +798,9 @@ class Game {
         }
 
         // Desenha objetos da tela
-        this.ACTUAL_SCREEN.objects
+        [...this.player.tempObjects, ...this.ACTUAL_SCREEN.objects]
         .filter(obj => {
+            if(!obj) return false;
             if(obj.condition) return obj.condition(this.player);
             return true;
         })
@@ -532,7 +820,7 @@ class Game {
 
                 this.ctx.drawImage(
                     spriteImg,
-                    (obj.sprite.frame * this.SPRITE_SHEET_SIZE) + (obj.sprite.cutW||0), obj.sprite.cutH,
+                    (obj.sprite.frame * spriteWidth) + (obj.sprite.cutW||0), obj.sprite.cutH,
                     spriteWidth, spriteHeight,
                     obj.x - offsetX, obj.y - offsetY,
                     obj.w, obj.h
@@ -592,35 +880,8 @@ class Game {
             }
         });
 
-        // Desenha hitbox
-        // this.ctx.strokeStyle = "red";
-        // this.ctx.strokeRect(this.player.x - offsetX, getPosY() - offsetY, this.player.w, getPlayerHeight());
-
-        // SPRITE
-        const { spriteX, spriteY } = this.getSprite();
-
-        this.ctx.save();
-
-        if (this.player.direction === "L") {
-            this.ctx.scale(-1, 1);
-            this.ctx.translate(-70 - this.player.x, this.getPosY());
-
-            this.ctx.drawImage(
-                this.personagemImg,
-                spriteX, spriteY, this.SPRITE_SHEET_SIZE, this.SPRITE_SHEET_SIZE,
-                offsetX - (this.player.w * .5), - offsetY - (this.getPlayerHeight() *.2),
-                this.player.w * 2.5, this.getPlayerHeight() + (this.getPlayerHeight() *.2)
-            );
-        } else {
-            this.ctx.drawImage(
-                this.personagemImg,
-                spriteX, spriteY, this.SPRITE_SHEET_SIZE, this.SPRITE_SHEET_SIZE,
-                this.player.x - offsetX - (this.player.w * .65), this.getPosY() - offsetY - (this.getPlayerHeight() *.2),
-                this.player.w * 2.5, this.getPlayerHeight() + (this.getPlayerHeight() *.2)
-            );
-        }
-
-        this.ctx.restore();
+        // ==================== DESENHA PLAYER =====================
+        this.player.draw(offsetX, offsetY);
 
         // Desenha mapa que estiver na frente (tiles com índice < 10)
         for (let y = startRow; y < endRow; y++) {
@@ -643,13 +904,179 @@ class Game {
             }
         }
 
+        // Desenha inimigos
+        if(this.ACTUAL_SCREEN.enemies && this.ACTUAL_SCREEN.enemies.length > 0){
+            this.ACTUAL_SCREEN.enemies
+            .filter(e => e.condition && typeof e.condition == 'function' ? e.condition() : true)
+            .forEach(e => e.draw(this.ctx, this.canvas, { x: offsetX, y: offsetY }));
 
-        // DIALOGO
-        if (this.dialogBox.ativo) this.desenharDialogo();
+            // Checa colisão com inimigo
+            this.ACTUAL_SCREEN.enemies
+            .filter(e => e.condition && typeof e.condition == 'function' ? e.condition() : true)
+            .forEach(e => {
+                if (this.isColliding(this.player, e)) {
+                    e.onTouch(this.player);
+                }
+            });
+
+        }
 
         
         // PLAYER INFO
-        this.exibirHUD();       
+        this.exibirHUD();
+
+    }
+
+    drawPause(){
+        this.ctx.save();
+        this.ctx.imageSmoothingEnabled = false;
+
+        // this.frame = this.frame || 0;
+        // this.frameCounter = this.frameCounter || 0;
+
+        // ==============  HUD DE PAUSA ================
+        // Desenha fundo
+        // this.ctx.fillStyle = "rgba(35, 31, 75, 1)";
+        // this.ctx.fillRect(0,0, this.canvas.width, this.canvas.height);
+        this.ctx.drawImage(
+            this.pauseImg,
+            0,0, 160, 90,
+            0,0, this.canvas.width, this.canvas.height
+        );
+
+        this.drawText("Pause", this.canvas.width * 0.42, this.canvas.width * 0.06, {});
+        
+
+        // Personagem
+        // Define sprite
+        const srcPlayer = this.player.haveVaria ? this.player.personagemImgVaria : this.player.personagemImg;
+
+        this.frameCounter++;
+
+        // if(this.frameCounter == 10){
+        //     this.frameCounter = 0;
+        //     this.frame = this.frame > 6 ? 0 : this.frame + 1;
+        // }
+
+        this.drawText(`Life: ${this.player.hp.current} / ${this.player.hp.max}`, this.canvas.width * 0.07, this.canvas.width * 0.084, {fontSize: "30px"});
+        
+        this.ctx.drawImage(
+            srcPlayer,
+            0, 32*5 * 4, this.SPRITE_SHEET_SIZE, this.SPRITE_SHEET_SIZE,
+            0, this.canvas.width * .1, this.canvas.width * .35, this.canvas.width * .35
+        )
+
+        // Chakras
+        this.drawText("Chakras", this.canvas.width * 0.72, this.canvas.width * 0.063, {fontSize: "30px"});
+
+        if (this.player.haveThirdEye) {
+            this.ctx.drawImage(this.itemsImg,
+                18 * 3, 0, 18 * 3, 18 * 3,
+                this.canvas.width * 0.638, this.canvas.width * 0.093, this.canvas.width * 0.05, this.canvas.width * 0.05
+            );
+        }
+
+        if (this.player.haveDoubleJump) {
+            this.ctx.drawImage(this.itemsImg,
+                18 * 3, 18 * 3 * 1, 18 * 3, 18 * 3,
+                this.canvas.width * 0.714, this.canvas.width * 0.093, this.canvas.width * 0.05, this.canvas.width * 0.05
+            );
+        }
+
+        if (this.player.haveSpeedBooster) {
+            this.ctx.drawImage(this.itemsImg,
+                18 * 3, 18 * 3 * 2, 18 * 3, 18 * 3,
+                this.canvas.width * 0.7885, this.canvas.width * 0.093, this.canvas.width * 0.05, this.canvas.width * 0.05
+            );
+        }
+
+        if (this.player.haveBall) {
+            this.ctx.drawImage(this.itemsImg,
+                18 * 3, 18 * 3 * 3, 18 * 3, 18 * 3,
+                this.canvas.width * 0.8635, this.canvas.width * 0.093, this.canvas.width * 0.05, this.canvas.width * 0.05
+            );
+        }
+
+        // Segunda linha
+        if (this.player.haveVaria) {
+            this.ctx.drawImage(this.itemsImg,
+                18 * 3, 18 * 3 * 4, 18 * 3, 18 * 3,
+                this.canvas.width * 0.674, this.canvas.width * 0.145, this.canvas.width * 0.05, this.canvas.width * 0.05
+            );
+        }
+
+        if (this.player.haveSpringBall) {
+            this.ctx.drawImage(this.itemsImg,
+                18 * 3, 18 * 3 * 5, 18 * 3, 18 * 3,
+                this.canvas.width * 0.749, this.canvas.width * 0.145, this.canvas.width * 0.05, this.canvas.width * 0.05
+            );
+        }
+
+        if (this.player.haveUpForce){
+            this.ctx.drawImage(this.itemsImg,
+                18 * 3, 18 * 3 * 6, 18 * 3, 18 * 3,
+                this.canvas.width * 0.824, this.canvas.width * 0.145, this.canvas.width * 0.05, this.canvas.width * 0.05
+            );
+        }
+
+
+        //  ================ Keys =================================
+        this.drawText("Keys", this.canvas.width * 0.72, this.canvas.width * 0.27, {fontSize: "30px"});
+
+        if(this.player.keys.green){
+            this.ctx.drawImage(this.general_tiles,
+                (32*5)*6, 0, 32 * 5, 32 * 5,
+                this.canvas.width * 0.62, this.canvas.height * 0.56, this.canvas.width * 0.1, this.canvas.width * 0.1
+            );
+        }
+        if(this.player.keys.yellow){
+            this.ctx.drawImage(this.general_tiles,
+                (32*5)*9, 0, 32 * 5, 32 * 5,
+                this.canvas.width * 0.76, this.canvas.height * 0.56, this.canvas.width * 0.1, this.canvas.width * 0.1
+            );
+        }
+        if(this.player.keys.blue){
+            this.ctx.drawImage(this.general_tiles,
+                (32*5)*7, 0, 32 * 5, 32 * 5,
+                this.canvas.width * 0.696, this.canvas.height * 0.714, this.canvas.width * 0.1, this.canvas.width * 0.1
+            );
+        }
+        if(this.player.keys.red){
+            this.ctx.drawImage(this.general_tiles,
+                (32*5)*8, 0, 32 * 5, 32 * 5,
+                this.canvas.width * 0.834, this.canvas.height * 0.714, this.canvas.width * 0.1, this.canvas.width * 0.1
+            );
+        }
+
+
+        this.ctx.restore();
+        
+    }
+
+    handlePause(){
+        if(this.state == 'PAUSED'){
+            // Despausando
+            this.state = "PLAYING";
+
+            
+            const bgm = document.getElementById("bgm");
+            bgm.volume = 0.5; // Ajusta o volume
+        }else{
+            // Pausa o jogo
+            this.state = "PAUSED";
+            this.ctx.save();
+    
+            this.ctx.fillStyle = "rgba(0,0,0,0.5)";
+            this.ctx.fillRect(0,0, this.canvas.width, this.canvas.height);
+    
+            this.ctx.restore();
+
+            // Diminui o volume da musica
+            const bgm = document.getElementById("bgm");
+            bgm.volume = 0.05; // Ajusta o volume
+
+
+        }
 
     }
 
@@ -662,10 +1089,13 @@ class Game {
     }
 
         
-    async reloadScreen (NEW_SCREEN, options){
-
+    reloadScreen (NEW_SCREEN, options){
         // Carrega tela atual
-        this.SCREEN_MODULE = await import(`../screens/${NEW_SCREEN || SCREEN_NAME}/index.js`);
+
+        this.ctx.fillStyle = "rgba(0,0,0,.5)";
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        this.SCREEN_MODULE = this.SCREEN_MODULES[NEW_SCREEN || this.SCREEN_NAME];
         this.ACTUAL_SCREEN = this.SCREEN_MODULE.default;
 
         this.mapWidth = this.SCREEN_MODULE.default.map[0].length;
@@ -736,20 +1166,29 @@ class Game {
         this.ctx.save();
 
         // ====== VIDAS ======
-        this.ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-        this.ctx.fillRect(this.canvas.width - 400, 0, 400, 120);
+        // this.ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+        // this.ctx.fillRect(this.canvas.width - 400, 0, 400, 120);
 
         this.ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
         this.ctx.shadowBlur = 0;
         this.ctx.shadowOffsetX = 3;
         this.ctx.shadowOffsetY = 3;
-        this.ctx.drawImage(this.general_tiles,
-            0, 0, 32 * 5, 32 * 5,
-            10, 10, 100, 100
-        );
+        // Checa se tem varia
+        if(this.player.haveVaria){
+            this.ctx.drawImage(this.general_tiles,
+                32 * 5 * 9, 32 * 5 * 2, 32 * 5, 32 * 5,
+                10, 10, 100, 100
+            );
+        }else{
+            this.ctx.drawImage(this.general_tiles,
+                0, 0, 32 * 5, 32 * 5,
+                10, 10, 100, 100
+            );
+        }
+        
         this.ctx.fillStyle = "#fff";
         this.ctx.font = "bold 35px PixelFont";
-        this.ctx.fillText(Math.round(this.player.lives), 85, 65);
+        this.ctx.fillText(Math.round(this.player.hp.current), 85, 65);
 
         if(this.DEBUG){
             this.ctx.font = "bold 20px PixelFont";
@@ -759,71 +1198,71 @@ class Game {
 
 
         // ====== ITENS ======
-        if (this.player.haveBall) {
-            this.ctx.drawImage(this.general_tiles,
-                (32*5)*4, 0,32 * 5, 32 * 5,
-                this.canvas.width - 370, 20, 60, 60
-            );
-        }
-        if (this.player.haveDoubleJump) {
-            this.ctx.drawImage(this.general_tiles,
-                (32*5)*3, 0, 32 * 5, 32 * 5,
-                this.canvas.width - 280, 20, 60, 60
-            );
-        }
-        if (this.player.haveSpringBall) {
-            this.ctx.drawImage(this.general_tiles,
-                (32*5)*5, 0, 32 * 5, 32 * 5,
-                this.canvas.width - 190, 20, 60, 60
-            );
-        }
-        if (this.player.haveSpeedBooster) {
-            this.ctx.drawImage(this.general_tiles,
-                (32*5)*2, 0, 32 * 5, 32 * 5,
-                this.canvas.width - 100, 20, 60, 60
-            );
-        }
+        // if (this.player.haveBall) {
+        //     this.ctx.drawImage(this.general_tiles,
+        //         (32*5)*4, 0,32 * 5, 32 * 5,
+        //         this.canvas.width - 370, 20, 60, 60
+        //     );
+        // }
+        // if (this.player.haveDoubleJump) {
+        //     this.ctx.drawImage(this.general_tiles,
+        //         (32*5)*3, 0, 32 * 5, 32 * 5,
+        //         this.canvas.width - 280, 20, 60, 60
+        //     );
+        // }
+        // if (this.player.haveSpringBall) {
+        //     this.ctx.drawImage(this.general_tiles,
+        //         (32*5)*5, 0, 32 * 5, 32 * 5,
+        //         this.canvas.width - 190, 20, 60, 60
+        //     );
+        // }
+        // if (this.player.haveSpeedBooster) {
+        //     this.ctx.drawImage(this.general_tiles,
+        //         (32*5)*2, 0, 32 * 5, 32 * 5,
+        //         this.canvas.width - 100, 20, 60, 60
+        //     );
+        // }
 
-        // ====== KEYS ======
-        if(this.player.keys.green){
-            this.ctx.drawImage(this.general_tiles,
-                (32*5)*6, 0, 32 * 5, 32 * 5,
-                this.canvas.width - 370, 70, 60, 60
-            );
-        }
-        if(this.player.keys.yellow){
-            this.ctx.drawImage(this.general_tiles,
-                (32*5)*9, 0, 32 * 5, 32 * 5,
-                this.canvas.width - 280, 70, 60, 60
-            );
-        }
-        if(this.player.keys.blue){
-            this.ctx.drawImage(this.general_tiles,
-                (32*5)*7, 0, 32 * 5, 32 * 5,
-                this.canvas.width - 190, 70, 60, 60
-            );
-        }
-        if(this.player.keys.red){
-            this.ctx.drawImage(this.general_tiles,
-                (32*5)*8, 0, 32 * 5, 32 * 5,
-                this.canvas.width - 100, 70, 60, 60
-            );
-        }
+        // // ====== KEYS ======
+        // if(this.player.keys.green){
+        //     this.ctx.drawImage(this.general_tiles,
+        //         (32*5)*6, 0, 32 * 5, 32 * 5,
+        //         this.canvas.width - 370, 70, 60, 60
+        //     );
+        // }
+        // if(this.player.keys.yellow){
+        //     this.ctx.drawImage(this.general_tiles,
+        //         (32*5)*9, 0, 32 * 5, 32 * 5,
+        //         this.canvas.width - 280, 70, 60, 60
+        //     );
+        // }
+        // if(this.player.keys.blue){
+        //     this.ctx.drawImage(this.general_tiles,
+        //         (32*5)*7, 0, 32 * 5, 32 * 5,
+        //         this.canvas.width - 190, 70, 60, 60
+        //     );
+        // }
+        // if(this.player.keys.red){
+        //     this.ctx.drawImage(this.general_tiles,
+        //         (32*5)*8, 0, 32 * 5, 32 * 5,
+        //         this.canvas.width - 100, 70, 60, 60
+        //     );
+        // }
 
         // TIMER
-        if(this.player.timerStart && !this.player.endTime){
-            const elapsed = Math.floor((performance.now() - this.player.timerStart) / 1000);
-            const minutes = String(Math.floor(elapsed / 60)).padStart(2, '0');
-            const seconds = String(elapsed % 60).padStart(2, '0');
-            this.ctx.font = "bold 30px PixelFont";
-            this.ctx.fillText(`${minutes}:${seconds}`, this.canvas.width/2, 115);
-        }else if(this.player.totalTime){
-            const totalSeconds = Math.floor(this.player.totalTime / 1000);
-            const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
-            const seconds = String(totalSeconds % 60).padStart(2, '0');
-            this.ctx.font = "bold 30px PixelFont";
-            this.ctx.fillText(`${minutes}:${seconds}`, this.canvas.width/2, 115);
-        }
+        // if(this.player.timerStart && !this.player.endTime){
+        //     const elapsed = Math.floor((performance.now() - this.player.timerStart) / 1000);
+        //     const minutes = String(Math.floor(elapsed / 60)).padStart(2, '0');
+        //     const seconds = String(elapsed % 60).padStart(2, '0');
+        //     this.ctx.font = "bold 30px PixelFont";
+        //     this.ctx.fillText(`${minutes}:${seconds}`, this.canvas.width/2, 115);
+        // }else if(this.player.totalTime){
+        //     const totalSeconds = Math.floor(this.player.totalTime / 1000);
+        //     const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+        //     const seconds = String(totalSeconds % 60).padStart(2, '0');
+        //     this.ctx.font = "bold 30px PixelFont";
+        //     this.ctx.fillText(`${minutes}:${seconds}`, this.canvas.width/2, 115);
+        // }
 
 
         this.ctx.restore();
@@ -879,7 +1318,7 @@ class Game {
             const { tileX, tileY } = this.getTileXY(sx, feetY + 1);
             const tile = this.ACTUAL_SCREEN.map[tileY]?.[tileX];
 
-            if (!tile || this.TILES_BG.includes(tile)) {
+            if (!tile || this.NOT_SOLID_TILES.includes(tile)) {
                 continue;
             }
             // tile sólido normal (ex: 1)
@@ -1012,14 +1451,15 @@ class Game {
 
             for (let index = 0; index < gp.buttons.length; index++) {
                 const button = gp.buttons[index];
+
+                
                 const action = callback(index);
 
                 // Inicializa controle de cooldown se ainda não existir
                 if (!this.lastButtonPress) this.lastButtonPress = {};
                 const cooldown = 500; // 1 segundo
 
-                if (button.pressed) {
-                    
+                if (button.pressed) {         
 
                     if (this.state === "MENU"){
                         if (!this.lastButtonPress[index] || now - this.lastButtonPress[index] > cooldown) {
@@ -1027,6 +1467,13 @@ class Game {
                             this.sendCommandToMenu(action);
                         }
                     }
+                    if(['PLAYING', 'PAUSED'].includes(this.state) && action == 'Start'){
+                        if (!this.lastButtonPress[index] || now - this.lastButtonPress[index] > cooldown) {
+                            this.lastButtonPress[index] = now;
+                            this.handlePause();
+                        }
+                    }
+
                     this.keys[action] = true;
                 } else {
                     this.keys[action] = false;
@@ -1069,7 +1516,9 @@ class Game {
             15: 'ArrowRight', // Botão RIGHT
             2: 'Run',       // Botão Y   
             1: 'OK',        // Botão A         
-            0: 'Jump'    // Botão B
+            0: 'Jump',    // Botão B
+            9: 'Start',
+            3: 'Spring'
         };
 
         return buttonMap[button] || null; // Retorna a ação correspondente ou null se não houver mapeamento
@@ -1090,7 +1539,7 @@ class Game {
         if (tile === undefined) return true;
 
         // Tile 0 = ar (não sólido)
-        if (this.TILES_BG.includes(tile)) return false;
+        if (this.NOT_SOLID_TILES.includes(tile)) return false;
 
         return true;
     }
@@ -1135,24 +1584,23 @@ class Game {
         this.player.isJumping = false;
 
         // Perde uma vida
-        this.player.lives--;
-
-        if (this.player.lives <= 0) {
-            // Game Over
-            this.gameOver();
-        }
+        this.player.takeDmg(1);
     }
 
     gameOver() {
+        console.log("GAME OVER");
         this.mostrarDialogo("Game Over", "Não foi dessa vez minha cara...", false, async () => {
             // Reinicia o jogo
-            this.player.lives = 3;
+            this.player.hp = {
+                max: 100,
+                current: 100
+            };
             this.player.haveBall = false;
             this.player.haveDoubleJump = false;
             this.player.haveSpringBall = false;
             this.player.haveSpeedBooster = false;
 
-            await reloadScreen("World", {noLoad: true});
+            this.reloadScreen("World", {noLoad: true});
             this.player.direction = "R";
         });
     }
@@ -1270,14 +1718,14 @@ class Game {
         return { spriteX, spriteY };
     }
 
-    changeMap(x, y) {
-        const tileX = Math.floor(x / this.TILE_SIZE);
-        const tileY = Math.floor(y / this.TILE_SIZE);
-        console.log(`Mudando o mapa no tile: (${tileX}, ${tileY})`);
-        // Exemplo de mudança de mapa
-        // map[tileX][tileY] = 2;
-        this.ACTUAL_SCREEN.map[tileX][tileY] == 1 ? 0 : 1; // Muda um tile específico para bloco
-    }
+    // changeMap(x, y) {
+    //     const tileX = Math.floor(x / this.TILE_SIZE);
+    //     const tileY = Math.floor(y / this.TILE_SIZE);
+    //     console.log(`Mudando o mapa no tile: (${tileX}, ${tileY})`);
+    //     // Exemplo de mudança de mapa
+    //     // map[tileX][tileY] = 2;
+    //     this.ACTUAL_SCREEN.map[tileX][tileY] == 1 ? 0 : 1; // Muda um tile específico para bloco
+    // }
 
     getPosY() {
         return this.player.y;
@@ -1313,6 +1761,25 @@ class Game {
         }
         linhas.push(linhaAtual);
         return linhas;
+    }
+
+
+    drawText(text, x, y, {fontSize, fontColor, strokeColor} = {} ){
+        const DEFAULT = {fontSize: "55px", fontColor: "#fff", strokeColor:"black"};
+        
+        this.ctx.save();
+        this.ctx.imageSmoothingEnabled = false;
+        // Letras
+        this.ctx.fillStyle = fontColor || DEFAULT.fontColor;
+        this.ctx.font = `bold ${fontSize || DEFAULT.fontSize} PixelFont`;
+        // Cor do contorno
+        this.ctx.strokeStyle = strokeColor || DEFAULT.strokeColor;
+        this.ctx.lineWidth = 4; // Espessura do contorno
+        this.ctx.strokeText(text, x, y);
+
+        this.ctx.fillText(text, x, y);
+
+        this.ctx.restore();
     }
 
 }
